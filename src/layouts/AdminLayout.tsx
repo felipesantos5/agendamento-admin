@@ -106,7 +106,7 @@ export function AdminLayout() {
     },
     {
       to: "comissoes",
-      label: "Comissções",
+      label: "Comissões",
       icon: <Users className="mr-2 h-4 w-4" />,
       roles: ["admin"],
     },
