@@ -72,7 +72,7 @@ const daysOfWeekForFilter = [
 ];
 
 export function AgendamentosPage() {
-  const { barbershopId, barbershopName } = useOutletContext<AdminOutletContext>();
+  const { barbershopId } = useOutletContext<AdminOutletContext>();
 
   const { user } = useAuth();
 

@@ -44,7 +44,7 @@ interface DashboardData {
 }
 
 export function DashboardPage() {
-  const { barbershopId, barbershopName } = useOutletContext<AdminOutletContext>();
+  const { barbershopId } = useOutletContext<AdminOutletContext>();
 
   const [dashboardData, setDashboardData] = useState<DashboardData>({}); // Inicializa como objeto vazio
   const [isLoading, setIsLoading] = useState(true);
