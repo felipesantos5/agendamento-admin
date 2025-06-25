@@ -236,7 +236,7 @@ export function AgendamentosPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Agendamentos - {barbershopName}</CardTitle>
+        <CardTitle>Agendamentos</CardTitle>
         {/* <CardDescription>
           {isUserAdmin ? "Visualize e filtre os agendamentos da sua barbearia." : "Visualize e filtre os seus agendamentos."}
         </CardDescription> */}

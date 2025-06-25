@@ -94,7 +94,7 @@ export function AdminLayout() {
     },
     {
       to: "metricas",
-      label: "Metricas",
+      label: "Métricas",
       icon: <LayoutDashboard className="mr-2 h-4 w-4" />,
       roles: ["admin"],
     },
@@ -106,7 +106,7 @@ export function AdminLayout() {
     },
     {
       to: "comissoes",
-      label: "Comissoes",
+      label: "Comissções",
       icon: <Users className="mr-2 h-4 w-4" />,
       roles: ["admin"],
     },

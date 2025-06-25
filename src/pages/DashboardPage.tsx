@@ -112,10 +112,9 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+      {/* <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold">Dashboard: {barbershopName}</h1>
-        {/* Adicionar DateRangePicker global aqui se desejar */}
-      </div>
+      </div> */}
       {error && <p className="text-center p-3 text-red-600 bg-red-50 rounded-md">{error}</p>}
 
       {/* Cards de Visão Geral */}
