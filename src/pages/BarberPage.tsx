@@ -370,7 +370,7 @@ export function BarberPage() {
                               Dia
                             </Label>
                             <Select value={slot.day} onValueChange={(value) => handleAvailabilityChange(index, "day", value)}>
-                              <SelectTrigger id={`day-${index}`}>
+                              <SelectTrigger id={`day-${index}`} className="w-full xs:w-auto">
                                 <SelectValue placeholder="Dia" />
                               </SelectTrigger>
                               <SelectContent>
@@ -384,7 +384,7 @@ export function BarberPage() {
                           </div>
 
                           {/* Container para os inputs de hora e o botão de deletar */}
-                          <div className="col-span-1 sm:col-span-2 grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+                          <div className="flex flex-col gap-2 xs:flex-row xs:items-end">
                             <div>
                               <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
                                 Início

@@ -123,7 +123,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Agendamentos (Mês Atual)</CardTitle>
-            <CalendarDays className="h-5 w-5 text-rose-500" />
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
@@ -135,7 +135,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita (Mês Atual)</CardTitle>
-            <DollarSign className="h-5 w-5 text-green-500" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
@@ -145,14 +145,12 @@ export function DashboardPage() {
                 </>
               )}
             </div>
-            {/* <p className="text-xs text-muted-foreground">+10% do mês passado</p> */}
           </CardContent>
         </Card>
-        {/* Você pode adicionar mais cards, por exemplo, total de clientes, média de avaliação etc. */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Profissionais Ativos</CardTitle>
-            <Users className="h-5 w-5 text-blue-500" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
@@ -164,7 +162,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Serviços Populares (Top)</CardTitle>
-            <Scissors className="h-5 w-5 text-purple-500" />
+            <Scissors className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-semibold">

@@ -18,6 +18,7 @@ interface AdminOutletContext {
 interface Barber {
   _id: string;
   name: string;
+  comission: number;
 }
 
 interface Commission {
@@ -27,6 +28,7 @@ interface Commission {
   totalServices: number;
   totalRevenue: number;
   totalCommission: number;
+  commissionRate: number;
   services: {
     serviceName: string;
     servicePrice: number;
@@ -122,12 +124,12 @@ export default function CommissionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col justify-between md:items-center gap-4 md:flex-row">
         <h1 className="text-3xl font-bold">Comissões</h1>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col flex-wrap gap-2 sm:flex-row">
           {/* --- NOVO: Select para filtrar por barbeiro --- */}
           <Select value={selectedBarber} onValueChange={setSelectedBarber}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filtrar por barbeiro" />
             </SelectTrigger>
             <SelectContent>
@@ -141,7 +143,7 @@ export default function CommissionsPage() {
           </Select>
 
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Mês" />
             </SelectTrigger>
             <SelectContent>
@@ -153,7 +155,7 @@ export default function CommissionsPage() {
             </SelectContent>
           </Select>
           <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[120px]">
+            <SelectTrigger className="w-full sm:w-[120px]">
               <SelectValue placeholder="Ano" />
             </SelectTrigger>
             <SelectContent>
@@ -213,7 +215,7 @@ export default function CommissionsPage() {
                   <BarChart data={summary}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="_id.month" tickFormatter={(tick) => monthNames[tick - 1]} />
-                    <YAxis tickFormatter={(value: any) => PriceFormater(value)} />
+                    <YAxis tickFormatter={(value: any) => value} />
                     <Tooltip formatter={(value: any) => PriceFormater(value)} />
                     <Bar dataKey="totalCommissions" fill="#8884d8" name="Comissão" />
                     <Bar dataKey="totalRevenue" fill="#82ca9d" name="Receita" />
@@ -231,28 +233,32 @@ export default function CommissionsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Barbeiro</TableHead>
+                    <TableHead className="text-center">Comissão</TableHead>
                     <TableHead className="text-center">Total de Serviços</TableHead>
-                    <TableHead className="text-right">Receita Gerada</TableHead>
+                    <TableHead className="text-center">Receita Gerada</TableHead>
                     <TableHead className="text-right">Comissão</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {commissions.map((commission) => (
-                    <TableRow key={commission._id}>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Avatar className="h-9 w-9 mr-4">
-                            <AvatarImage src={commission.barberImage} alt="Avatar" />
-                            <AvatarFallback>{commission.barberName.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{commission.barberName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">{commission.totalServices}</TableCell>
-                      <TableCell className="text-right">{PriceFormater(commission.totalRevenue)}</TableCell>
-                      <TableCell className="text-right font-semibold">{PriceFormater(commission.totalCommission)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {commissions.map((commission) => {
+                    return (
+                      <TableRow key={commission._id}>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Avatar className="h-9 w-9 mr-4">
+                              <AvatarImage src={commission.barberImage} alt="Avatar" />
+                              <AvatarFallback>{commission.barberName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{commission.barberName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">{commission.commissionRate}%</TableCell>
+                        <TableCell className="text-center">{commission.totalServices}</TableCell>
+                        <TableCell className="text-center">{PriceFormater(commission.totalRevenue)}</TableCell>
+                        <TableCell className="text-right font-semibold">{PriceFormater(commission.totalCommission)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
                 <TableCaption>
                   {commissions.length === 0 ? "Nenhuma comissão encontrada para este período." : "Detalhes das comissões para o período selecionado."}

@@ -302,7 +302,7 @@ export function BarbeariaConfigPage() {
 
           <div className="space-y-2">
             <ColorSelector
-              label="Cor Principal da Loja"
+              label="Cor da Loja"
               color={formData.themeColor || "#D10000"} // Usa a cor do formData ou um fallback
               onChange={handleThemeColorChange}
             />

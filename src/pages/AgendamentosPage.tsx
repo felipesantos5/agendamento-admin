@@ -307,13 +307,13 @@ export function AgendamentosPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">Data e Hora</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Serviço</TableHead>
-              {isUserAdmin && <TableHead>Profissional</TableHead>}
-              <TableHead className="text-right">Preço (R$)</TableHead>
+              <TableHead className="text-center">Cliente</TableHead>
+              <TableHead className="text-center">Telefone</TableHead>
+              <TableHead className="text-center">Serviço</TableHead>
+              {isUserAdmin && <TableHead className="text-center">Profissional</TableHead>}
+              <TableHead className="text-center">Preço (R$)</TableHead>
               <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead className="text-center">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -321,7 +321,7 @@ export function AgendamentosPage() {
               const { date, time, isPast: bookingIsPast } = formatBookingTime(booking.time);
               return (
                 <TableRow key={booking._id} className={bookingIsPast && showPastAppointments ? "opacity-70 bg-gray-50" : ""}>
-                  <TableCell className="W-[200px]">
+                  <TableCell className="W-[200px] ">
                     <div className="flex items-center">
                       <div>
                         <div>{date}</div>
@@ -329,19 +329,19 @@ export function AgendamentosPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <div className="flex items-center">{booking.customer.name}</div>
                   </TableCell>
-                  <TableCell>
-                    <a href={`https://wa.me/${booking.customer.phone}`} className="flex items-center" target="_blank">
+                  <TableCell className="text-center">
+                    <a href={`https://wa.me/${booking.customer.phone}`} className="flex items-center underline" target="_blank">
                       {PhoneFormat(booking.customer.phone) || "Não informado"}
                     </a>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <div className="flex items-center">{booking.service.name}</div>
                   </TableCell>
-                  {isUserAdmin && <TableCell>{booking.barber.name}</TableCell>}
-                  <TableCell className="text-right">
+                  {isUserAdmin && <TableCell className="text-center">{booking.barber.name}</TableCell>}
+                  <TableCell className="text-center">
                     {typeof booking.service?.price === "number" ? booking.service.price.toFixed(2) : "N/A"}
                   </TableCell>
                   <TableCell className="text-center">
