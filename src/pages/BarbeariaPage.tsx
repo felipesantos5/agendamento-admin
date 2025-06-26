@@ -395,7 +395,7 @@ export function BarbeariaConfigPage() {
                   </div>
 
                   {/* Container para horários e botão de remover */}
-                  <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 md:col-span-3">
+                  <div className="flex flex-col items-end gap-2 md:flex-row">
                     {/* Input de Início */}
                     <div className="w-full">
                       <Label htmlFor={`wh-start-${index}`} className="text-xs font-medium text-gray-600">

@@ -312,9 +312,7 @@ export function BarberPage() {
             {isMobile && (
               <TableRow>
                 <TableCell colSpan={4} className="text-center pt-4">
-                  <Button onClick={openAddDialog}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
-                  </Button>
+                  <Button onClick={openAddDialog}>Adicionar</Button>
                 </TableCell>
               </TableRow>
             )}

@@ -170,13 +170,13 @@ export function ServicesPage() {
       </CardHeader>
       <CardContent>
         {error && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
-        <Table>
+        <Table className="mb-0">
           <TableCaption>{services.length === 0 && "Nenhum serviço cadastrado ainda."}</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead className="text-right">Preço (R$)</TableHead>
-              <TableHead className="text-right">Duração (min)</TableHead>
+              <TableHead className="text-center">Duração (min)</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -185,7 +185,7 @@ export function ServicesPage() {
               <TableRow key={service._id}>
                 <TableCell className="font-medium">{service.name}</TableCell>
                 <TableCell className="text-right">{service.price.toFixed(2)}</TableCell>
-                <TableCell className="text-right">{service.duration}</TableCell>
+                <TableCell className="text-center">{service.duration}</TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button variant="outline" size="sm" onClick={() => openEditDialog(service)}>
                     <Edit2 className="h-4 w-4" />
@@ -215,9 +215,7 @@ export function ServicesPage() {
             {isMobile && (
               <TableRow>
                 <TableCell colSpan={4} className="text-center pt-4">
-                  <Button onClick={openAddDialog}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
-                  </Button>
+                  <Button onClick={openAddDialog}>Adicionar</Button>
                 </TableCell>
               </TableRow>
             )}
@@ -236,14 +234,14 @@ export function ServicesPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid items-center gap-4">
-                <Label htmlFor="name" className="text-right">
+              <div className="flex items-center gap-4">
+                <Label htmlFor="name" className="text-right w-[50px]">
                   Nome
                 </Label>
                 <Input id="name" name="name" value={currentServiceForm.name || ""} onChange={handleFormInputChange} className="col-span-3" required />
               </div>
-              <div className="grid items-center gap-4">
-                <Label htmlFor="price" className="text-right">
+              <div className="flex items-center gap-4">
+                <Label htmlFor="price" className="text-right w-[50px]">
                   Preço (R$)
                 </Label>
                 <Input
@@ -257,8 +255,8 @@ export function ServicesPage() {
                   required
                 />
               </div>
-              <div className="grid items-center gap-4">
-                <Label htmlFor="duration" className="text-right">
+              <div className="flex items-center gap-4">
+                <Label htmlFor="duration" className="text-right w-[50px]">
                   Duração (min)
                 </Label>
                 <Input
