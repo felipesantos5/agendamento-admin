@@ -235,13 +235,13 @@ export function ServicesPage() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="flex items-center gap-4">
-                <Label htmlFor="name" className="text-right w-[50px]">
+                <Label htmlFor="name" className="text-center min-w-[55px] max-w-[55px] ">
                   Nome
                 </Label>
                 <Input id="name" name="name" value={currentServiceForm.name || ""} onChange={handleFormInputChange} className="col-span-3" required />
               </div>
               <div className="flex items-center gap-4">
-                <Label htmlFor="price" className="text-right w-[50px]">
+                <Label htmlFor="price" className="text-center min-w-[55px] max-w-[55px]">
                   Preço (R$)
                 </Label>
                 <Input
@@ -256,8 +256,8 @@ export function ServicesPage() {
                 />
               </div>
               <div className="flex items-center gap-4">
-                <Label htmlFor="duration" className="text-right w-[50px]">
-                  Duração (min)
+                <Label htmlFor="duration" className="text-center min-w-[55px] max-w-[55px]">
+                  Duração (minutos)
                 </Label>
                 <Input
                   id="duration"
