@@ -257,7 +257,6 @@ export function BarberPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[300px]">Nome</TableHead>
-              <TableHead>Email de Login</TableHead>
               <TableHead>Disponibilidade</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -273,7 +272,6 @@ export function BarberPage() {
                   )}
                   {barber.name}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{barber.email || "Não definido"}</TableCell>
                 <TableCell className="text-xs">
                   {barber.availability && barber.availability.length > 0 ? (
                     barber.availability.map((a, index) => <div key={index}>{`${a.day}: ${a.start} - ${a.end}`}</div>)
@@ -326,6 +324,11 @@ export function BarberPage() {
                   <div className="space-y-1.5">
                     <Label htmlFor="name">Nome do Funcionário</Label>
                     <Input id="name" name="name" value={currentBarberForm.name || ""} onChange={handleFormInputChange} required />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Email do Funcionário</Label>
+                    <Input id="name" name="name" value={currentBarberForm.email || ""} onChange={handleFormInputChange} required />
                   </div>
 
                   <div className="space-y-1.5">
