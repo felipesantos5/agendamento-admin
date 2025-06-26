@@ -266,7 +266,7 @@ export function BarberPage() {
               <TableRow key={barber._id}>
                 <TableCell className="font-medium flex gap-1 flex-col md:flex-row pt-4 items-center">
                   {barber.image ? (
-                    <img src={barber.image} alt={barber.name} className="h-10 w-10 rounded-full object-cover" />
+                    <img src={barber.image} alt={barber.name} className="h-10 w-10 rounded-full object-cover md:mr-3" />
                   ) : (
                     <UserCircle className="h-10 w-10 text-gray-300 mr-4" />
                   )}
