@@ -214,7 +214,7 @@ export function ServicesPage() {
             ))}
             {isMobile && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center pt-4">
+                <TableCell colSpan={4} className="text-center pt-4 pb-0">
                   <Button onClick={openAddDialog}>Adicionar</Button>
                 </TableCell>
               </TableRow>

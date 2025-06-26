@@ -257,7 +257,7 @@ export function BarberPage() {
       </CardHeader>
       <CardContent>
         {error && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
-        <Table>
+        <Table className="mb-0">
           <TableCaption>{barbers.length === 0 && !isLoading && "Nenhum funcionário cadastrado."}</TableCaption>
           <TableHeader>
             <TableRow>
@@ -311,7 +311,7 @@ export function BarberPage() {
             ))}
             {isMobile && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center pt-4">
+                <TableCell colSpan={4} className="text-center pt-4 pb-0">
                   <Button onClick={openAddDialog}>Adicionar</Button>
                 </TableCell>
               </TableRow>
