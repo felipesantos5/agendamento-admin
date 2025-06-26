@@ -250,7 +250,7 @@ export function BarbeariaConfigPage() {
           {/* Detalhes Básicos */}
 
           <div className="space-y-2">
-            <Label htmlFor="name">Nome da Barbearia</Label>
+            <Label htmlFor="name">Nome</Label>
             <Input id="name" name="name" value={formData.name || ""} onChange={handleInputChange} required />
           </div>
           <div className="space-y-2">
@@ -445,7 +445,7 @@ export function BarbeariaConfigPage() {
             </div>
           </fieldset>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="justify-end">
           <Button type="submit" disabled={isLoading || isUploading} className="cursor-pointer mt-4">
             {isLoading ? (isUploading ? "Enviando Imagem..." : "Salvando...") : "Salvar Configurações"}
           </Button>

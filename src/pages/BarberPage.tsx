@@ -24,6 +24,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import apiClient from "@/services/api";
 import { API_BASE_URL } from "@/config/BackendUrl";
 import { ImageUploader } from "./ImageUploader";
+import { useResponsive } from "@/hooks/useResponsive";
 
 // Contexto do AdminLayout (para obter barbershopId)
 interface AdminOutletContext {
@@ -83,6 +84,8 @@ export function BarberPage() {
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null);
   const [setupLink, setSetupLink] = useState("");
+
+  const { isMobile } = useResponsive();
 
   const fetchBarbers = async () => {
     if (!barbershopId) return;
@@ -246,9 +249,11 @@ export function BarberPage() {
         <div className="mb-4">
           <CardTitle>Gerenciar Funcionários</CardTitle>
         </div>
-        <Button onClick={openAddDialog}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
-        </Button>
+        {!isMobile && (
+          <Button onClick={openAddDialog}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {error && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
@@ -304,6 +309,15 @@ export function BarberPage() {
                 </TableCell>
               </TableRow>
             ))}
+            {isMobile && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center pt-4">
+                  <Button onClick={openAddDialog}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

@@ -30,6 +30,7 @@ import { PlusCircle, Edit2, Trash2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import apiClient from "@/services/api";
 import { API_BASE_URL } from "@/config/BackendUrl";
+import { useResponsive } from "@/hooks/useResponsive";
 
 // Contexto do AdminLayout (para obter barbershopId)
 interface AdminOutletContext {
@@ -65,6 +66,8 @@ export function ServicesPage() {
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [currentServiceForm, setCurrentServiceForm] = useState<Partial<Service>>(initialServiceFormState);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+
+  const { isMobile } = useResponsive();
 
   const fetchServices = async () => {
     if (!barbershopId) return;
@@ -159,14 +162,16 @@ export function ServicesPage() {
           <CardTitle>Gerenciar Serviços</CardTitle>
           {/* <p className="text-sm text-muted-foreground">Adicione, edite ou remova os serviços oferecidos.</p> */}
         </div>
-        <Button onClick={openAddDialog}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
-        </Button>
+        {!isMobile && (
+          <Button onClick={openAddDialog}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {error && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
         <Table>
-          <TableCaption>{services.length === 0 && !isLoading ? "Nenhum serviço cadastrado ainda." : "Lista dos seus serviços atuais."}</TableCaption>
+          <TableCaption>{services.length === 0 && "Nenhum serviço cadastrado ainda."}</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
@@ -207,6 +212,15 @@ export function ServicesPage() {
                 </TableCell>
               </TableRow>
             ))}
+            {isMobile && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center pt-4">
+                  <Button onClick={openAddDialog}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>
@@ -222,13 +236,13 @@ export function ServicesPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
+              <div className="grid items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   Nome
                 </Label>
                 <Input id="name" name="name" value={currentServiceForm.name || ""} onChange={handleFormInputChange} className="col-span-3" required />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
+              <div className="grid items-center gap-4">
                 <Label htmlFor="price" className="text-right">
                   Preço (R$)
                 </Label>
@@ -243,7 +257,7 @@ export function ServicesPage() {
                   required
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
+              <div className="grid items-center gap-4">
                 <Label htmlFor="duration" className="text-right">
                   Duração (min)
                 </Label>
