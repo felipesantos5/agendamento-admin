@@ -237,7 +237,7 @@ export function ServicesPage() {
                   name="price"
                   type="number"
                   step="0.01"
-                  value={currentServiceForm.price || 0}
+                  value={currentServiceForm.price}
                   onChange={handleFormInputChange}
                   className="col-span-3"
                   required
@@ -252,7 +252,7 @@ export function ServicesPage() {
                   name="duration"
                   type="number"
                   step="5"
-                  value={currentServiceForm.duration || 30}
+                  value={currentServiceForm.duration}
                   onChange={handleFormInputChange}
                   className="col-span-3"
                   required
