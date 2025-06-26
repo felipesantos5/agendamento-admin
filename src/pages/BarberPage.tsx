@@ -257,14 +257,14 @@ export function BarberPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[300px]">Barbeiro</TableHead>
-              <TableHead>Disponibilidade</TableHead>
+              <TableHead className="text-center">Disponibilidade</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {barbers.map((barber) => (
               <TableRow key={barber._id}>
-                <TableCell className="font-medium flex gap-1 flex-col md:flex-row pt-4 items-center">
+                <TableCell className="font-medium flex gap-1 flex-col md:flex-row pt-4 items-center sm:items-baseline md:items-center">
                   {barber.image ? (
                     <img src={barber.image} alt={barber.name} className="h-10 w-10 rounded-full object-cover md:mr-3" />
                   ) : (
