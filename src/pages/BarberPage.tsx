@@ -256,7 +256,7 @@ export function BarberPage() {
           <TableCaption>{barbers.length === 0 && !isLoading ? "Nenhum funcionário cadastrado." : "Lista dos seus funcionários."}</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px]">Nome</TableHead>
+              <TableHead className="w-[300px]">Barbeiro</TableHead>
               <TableHead>Disponibilidade</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -264,9 +264,9 @@ export function BarberPage() {
           <TableBody>
             {barbers.map((barber) => (
               <TableRow key={barber._id}>
-                <TableCell className="font-medium flex gap-1 flex-col items-baseline md:items-center md:flex-row">
+                <TableCell className="font-medium flex gap-1 flex-col md:flex-row pt-4 items-center">
                   {barber.image ? (
-                    <img src={barber.image} alt={barber.name} className="h-10 w-10 rounded-full object-cover mr-4" />
+                    <img src={barber.image} alt={barber.name} className="h-10 w-10 rounded-full object-cover" />
                   ) : (
                     <UserCircle className="h-10 w-10 text-gray-300 mr-4" />
                   )}
