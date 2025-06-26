@@ -264,7 +264,7 @@ export function BarberPage() {
           <TableBody>
             {barbers.map((barber) => (
               <TableRow key={barber._id}>
-                <TableCell className="font-medium flex items-center">
+                <TableCell className="font-medium flex gap-1 flex-col items-baseline md:items-center md:flex-row">
                   {barber.image ? (
                     <img src={barber.image} alt={barber.name} className="h-10 w-10 rounded-full object-cover mr-4" />
                   ) : (
