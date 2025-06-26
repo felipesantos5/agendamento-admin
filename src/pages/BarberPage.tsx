@@ -384,8 +384,8 @@ export function BarberPage() {
                           </div>
 
                           {/* Container para os inputs de hora e o botão de deletar */}
-                          <div className="flex flex-col gap-2 xs:flex-row xs:items-end">
-                            <div>
+                          <div className="flex flex-col gap-2 xs:flex-row items-end xs:items-center">
+                            <div className="w-full">
                               <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
                                 Início
                               </Label>
@@ -396,7 +396,7 @@ export function BarberPage() {
                                 onChange={(e) => handleAvailabilityChange(index, "start", e.target.value)}
                               />
                             </div>
-                            <div>
+                            <div className="w-full">
                               <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
                                 Fim
                               </Label>
@@ -414,7 +414,7 @@ export function BarberPage() {
                               onClick={() => removeAvailabilitySlot(index)}
                               aria-label="Remover horário"
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-4 w-4 text-red-500 md:mt-4" />
                             </Button>
                           </div>
                         </div>
