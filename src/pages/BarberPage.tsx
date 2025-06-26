@@ -242,9 +242,9 @@ export function BarberPage() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-col items-start md:items-center justify-between md:flex-row">
+      <CardHeader className="flex flex-row items-start md:items-center justify-between">
         <div className="mb-4">
-          <CardTitle>Gerenciar Funcionários (Barbeiros)</CardTitle>
+          <CardTitle>Gerenciar Funcionários</CardTitle>
         </div>
         <Button onClick={openAddDialog}>
           <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
@@ -253,7 +253,7 @@ export function BarberPage() {
       <CardContent>
         {error && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
         <Table>
-          <TableCaption>{barbers.length === 0 && !isLoading ? "Nenhum funcionário cadastrado." : "Lista dos seus funcionários."}</TableCaption>
+          <TableCaption>{barbers.length === 0 && !isLoading && "Nenhum funcionário cadastrado."}</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[300px]">Barbeiro</TableHead>
@@ -263,7 +263,7 @@ export function BarberPage() {
           </TableHeader>
           <TableBody>
             {barbers.map((barber) => (
-              <TableRow key={barber._id}>
+              <TableRow key={barber._id} onClick={() => openEditDialog(barber)} className="cursor-pointer">
                 <TableCell className="font-medium flex gap-1 flex-col md:flex-row pt-4 items-center sm:items-baseline md:items-center">
                   {barber.image ? (
                     <img src={barber.image} alt={barber.name} className="h-10 w-10 rounded-full object-cover md:mr-3" />
@@ -280,11 +280,25 @@ export function BarberPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-right space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => openEditDialog(barber)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Impede a propagação do evento
+                      openEditDialog(barber);
+                    }}
+                  >
                     <Edit2 className="h-4 w-4" />
                   </Button>
 
-                  <Button variant="destructive" size="sm" onClick={() => setBarberToDelete(barber)}>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setBarberToDelete(barber);
+                    }}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TableCell>
@@ -327,8 +341,9 @@ export function BarberPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="name">Email do Funcionário</Label>
-                    <Input id="name" name="name" value={currentBarberForm.email || ""} onChange={handleFormInputChange} required />
+                    <Label htmlFor="email">Email de Login</Label>
+                    <Input id="email" name="email" type="email" value={currentBarberForm.email || ""} onChange={handleFormInputChange} required />
+                    <p className="text-xs text-muted-foreground">O convite para definir a senha será associado a este email.</p>
                   </div>
 
                   <div className="space-y-1.5">
@@ -347,14 +362,6 @@ export function BarberPage() {
                       className="col-span-3"
                     />
                   </div>
-
-                  {dialogMode === "add" && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="email">Email de Login</Label>
-                      <Input id="email" name="email" type="email" value={currentBarberForm.email || ""} onChange={handleFormInputChange} required />
-                      <p className="text-xs text-muted-foreground">O convite para definir a senha será associado a este email.</p>
-                    </div>
-                  )}
 
                   <div className="space-y-2">
                     <Label>Horários de Disponibilidade</Label>
@@ -471,7 +478,7 @@ export function BarberPage() {
       <AlertDialog open={!!barberToDelete} onOpenChange={(open) => !open && setBarberToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Deleção</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja remover o funcionário "{barberToDelete?.name}"? Os agendamentos existentes para este profissional não serão
               afetados, mas ele não estará mais disponível para novos agendamentos.
