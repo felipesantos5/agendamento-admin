@@ -159,7 +159,7 @@ export function ImageUploader({ onFileSelect, initialImageUrl, label = "Logo/Ima
         id={fileInputRef.current?.id || "image-upload-input"}
       />
       {previewUrl && !selectedFile && initialImageUrl && (
-        <Button type="button" variant="outline" className="mt-4 mx-auto md:mx-0" onClick={triggerFileInput}>
+        <Button type="button" variant="outline" className="mt-4 mx-auto block md:mx-0" onClick={triggerFileInput}>
           Alterar Imagem
         </Button>
       )}
