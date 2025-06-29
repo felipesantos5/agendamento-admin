@@ -45,6 +45,7 @@ interface BarbershopData {
   instagram: string;
   workingHours: WorkingHour[];
   themeColor: string;
+  LogoBackgroundColor: string;
 }
 
 // Estado inicial para o formulário (parcial, pois será preenchido após o fetch)
@@ -62,6 +63,7 @@ const initialBarbershopState: Partial<BarbershopData> = {
   },
   logoUrl: "",
   themeColor: "",
+  LogoBackgroundColor: "",
   contact: "",
   instagram: "",
   slug: "",
@@ -148,6 +150,13 @@ export function BarbeariaConfigPage() {
     setFormData((prev) => ({
       ...prev,
       themeColor: newColor,
+    }));
+  };
+
+  const handleLogoBackgroundColorChange = (newColor: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      LogoBackgroundColor: newColor,
     }));
   };
 
@@ -307,6 +316,11 @@ export function BarbeariaConfigPage() {
               onChange={handleThemeColorChange}
             />
             <p className="text-xs text-muted-foreground">Esta cor será usada em botões e destaques na página da sua barbearia.</p>
+          </div>
+
+          <div className="space-y-2">
+            <ColorSelector label="Cor principal" color={formData.LogoBackgroundColor || "#000"} onChange={handleLogoBackgroundColorChange} />
+            <p className="text-xs text-muted-foreground">Esta cor será usada no fundo da sua logo.</p>
           </div>
 
           {/* <div className="space-y-2">
