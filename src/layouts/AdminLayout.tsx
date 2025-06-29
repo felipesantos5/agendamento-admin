@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Outlet, Link, useParams, useLocation } from "react-router-dom";
-import { LayoutDashboard, Settings, Users, Scissors, CalendarDays, ShieldAlert, LogOut, X, Menu } from "lucide-react"; // Ícones de exemplo
+import { LayoutDashboard, Settings, Users, Scissors, CalendarDays, ShieldAlert, LogOut, X, Menu, CalendarOff } from "lucide-react"; // Ícones de exemplo
 import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/services/api";
 import { Button } from "@/components/ui/button";
@@ -102,6 +102,12 @@ export function AdminLayout() {
       to: "funcionarios",
       label: "Funcionários",
       icon: <Users className="mr-2 h-4 w-4" />,
+      roles: ["admin"],
+    },
+    {
+      to: "folga",
+      label: "folga",
+      icon: <CalendarOff className="mr-2 h-4 w-4" />,
       roles: ["admin"],
     },
     {
