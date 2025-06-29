@@ -105,8 +105,8 @@ export function AdminLayout() {
       roles: ["admin"],
     },
     {
-      to: "folga",
-      label: "folga",
+      to: "folgas",
+      label: "folgas",
       icon: <CalendarOff className="mr-2 h-4 w-4" />,
       roles: ["admin"],
     },
