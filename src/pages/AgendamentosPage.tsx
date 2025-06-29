@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import { format, parseISO, isPast, differenceInMilliseconds } from "date-fns";
+import { format, parseISO, isPast, differenceInMilliseconds, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // Importações de componentes ShadCN/UI
@@ -125,46 +125,62 @@ export function AgendamentosPage() {
   }, [barbershopId]);
 
   const displayedBookings = useMemo(() => {
-    let filtered = [...bookings];
+    // Primeiro, filtra agendamentos que possam ter dados inválidos para evitar erros
+    let filtered = bookings.filter((booking) => booking && typeof booking.time === "string");
 
-    // 1. Filtrar por barbeiro selecionado
+    // 1. Filtrar por barbeiro selecionado (se admin)
     if (isUserAdmin && selectedBarberFilter !== "all") {
       filtered = filtered.filter((booking) => booking.barber?._id === selectedBarberFilter);
     }
 
+    // 2. Filtrar por dia da semana
     if (selectedDayFilter !== "all") {
       filtered = filtered.filter((booking) => {
-        // É importante considerar o fuso horário para pegar o dia da semana correto
-        // da data UTC que vem do banco. Uma forma simples é criar a data como se
-        // fosse local para o dia da semana não mudar por causa de UTC-3.
-        const dateInLocalTZ = new Date(booking.time.replace("Z", ""));
-        const dayOfWeek = dateInLocalTZ.getDay(); // Retorna 0 (Domingo) a 6 (Sábado)
+        const dateObj = parseISO(booking.time);
+        // Garante que a data é válida antes de tentar obter o dia
+        if (!isValid(dateObj)) return false;
+        // Usar getDay() em UTC é mais seguro aqui
+        const dayOfWeek = dateObj.getUTCDay();
         return String(dayOfWeek) === selectedDayFilter;
       });
     }
 
-    // 2. Filtrar agendamentos passados (se a opção estiver desmarcada)
+    // 3. Filtrar agendamentos passados (se a opção estiver desmarcada)
     if (!showPastAppointments) {
-      filtered = filtered.filter((booking) => !isPast(parseISO(booking.time)));
+      filtered = filtered.filter((booking) => {
+        const dateObj = parseISO(booking.time);
+        return isValid(dateObj) && !isPast(dateObj);
+      });
     }
 
-    // 3. Ordenar a lista filtrada
-    // return filtered.sort((a, b) => {
-    //   const dateA = parseISO(a.time);
-    //   const dateB = parseISO(b.time);
-    //   const aIsPast = isPast(dateA);
-    //   const bIsPast = isPast(dateB);
-
-    //   if (aIsPast && bIsPast) return differenceInMilliseconds(dateB, dateA);
-    //   if (aIsPast && !bIsPast) return -1;
-    //   if (!aIsPast && bIsPast) return 1;
-    //   return differenceInMilliseconds(dateA, dateB);
-    // });
-
+    // 4. Ordenar a lista filtrada de forma inteligente e segura
     return filtered.sort((a, b) => {
       const dateA = parseISO(a.time);
       const dateB = parseISO(b.time);
-      return differenceInMilliseconds(dateA, dateB);
+
+      // Se alguma data for inválida, coloca no final da lista para não quebrar a ordenação
+      if (!isValid(dateA)) return 1;
+      if (!isValid(dateB)) return -1;
+
+      const aIsPast = isPast(dateA);
+      const bIsPast = isPast(dateB);
+
+      // Lógica de ordenação:
+      // - Se um é passado e o outro futuro, o futuro vem primeiro.
+      if (aIsPast && !bIsPast) return 1; // 'a' é passado, 'b' é futuro -> b vem primeiro
+      if (!aIsPast && bIsPast) return -1; // 'a' é futuro, 'b' é passado -> a vem primeiro
+
+      // - Se ambos são futuros, ordena do mais próximo para o mais distante.
+      if (!aIsPast && !bIsPast) {
+        return differenceInMilliseconds(dateA, dateB);
+      }
+
+      // - Se ambos são passados, ordena do mais recente para o mais antigo (ordem decrescente).
+      if (aIsPast && bIsPast) {
+        return differenceInMilliseconds(dateB, dateA);
+      }
+
+      return 0; // Caso padrão
     });
   }, [bookings, selectedBarberFilter, showPastAppointments, selectedDayFilter, isUserAdmin]);
 
@@ -193,6 +209,26 @@ export function AgendamentosPage() {
     } finally {
       setIsDeleting(false);
       setBookingToDelete(null);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    const originalBookings = [...bookings];
+
+    // Atualização otimista da UI para uma resposta instantânea
+    setBookings(bookings.map((b) => (b._id === bookingId ? { ...b, status: "canceled" } : b)));
+
+    try {
+      // Usa a rota de status existente para definir como "canceled"
+      await apiClient.put(`${API_BASE_URL}/barbershops/${barbershopId}/bookings/${bookingId}/status`, {
+        status: "canceled",
+      });
+      toast.success("Agendamento cancelado com sucesso.");
+    } catch (error) {
+      // Reverte a alteração na UI em caso de erro na API
+      setBookings(originalBookings);
+      toast.error("Falha ao cancelar o agendamento.");
+      console.error(error);
     }
   };
 
@@ -237,9 +273,6 @@ export function AgendamentosPage() {
     <Card>
       <CardHeader>
         <CardTitle>Agendamentos</CardTitle>
-        {/* <CardDescription>
-          {isUserAdmin ? "Visualize e filtre os agendamentos da sua barbearia." : "Visualize e filtre os seus agendamentos."}
-        </CardDescription> */}
       </CardHeader>
       <CardContent>
         {error && !isLoading && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
@@ -329,21 +362,35 @@ export function AgendamentosPage() {
                       </div>
                     </div>
                   </TableCell>
+
+                  {/* --- CORREÇÕES APLICADAS ABAIXO --- */}
+
                   <TableCell className="text-center">
-                    <div className="flex items-center">{booking.customer.name}</div>
+                    {/* Verifica se 'customer' existe antes de acessar 'name' */}
+                    <div className="flex items-center">{booking.customer?.name || <span className="text-red-500 italic">Cliente excluído</span>}</div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <a href={`https://wa.me/${booking.customer.phone}`} className="flex items-center underline" target="_blank">
-                      {PhoneFormat(booking.customer.phone) || "Não informado"}
+                    {/* Verifica se 'customer' existe antes de acessar 'phone' */}
+                    <a href={`https://wa.me/${booking.customer?.phone || ""}`} className="flex items-center underline" target="_blank">
+                      {booking.customer?.phone ? PhoneFormat(booking.customer.phone) : "Não informado"}
                     </a>
                   </TableCell>
                   <TableCell className="text-center">
-                    <div className="flex items-center">{booking.service.name}</div>
+                    {/* Verifica se 'service' existe antes de acessar 'name' */}
+                    <div className="flex items-center">{booking.service?.name || <span className="text-red-500 italic">Serviço excluído</span>}</div>
                   </TableCell>
-                  {isUserAdmin && <TableCell className="text-center">{booking.barber.name}</TableCell>}
+                  {isUserAdmin && (
+                    <TableCell className="text-center">
+                      {/* Verifica se 'barber' existe antes de acessar 'name' */}
+                      {booking.barber?.name || <span className="text-red-500 italic">Barbeiro excluído</span>}
+                    </TableCell>
+                  )}
                   <TableCell className="text-center">
+                    {/* Verifica se 'service' e 'price' existem */}
                     {typeof booking.service?.price === "number" ? booking.service.price.toFixed(2) : "N/A"}
                   </TableCell>
+
+                  {/* ... O resto das suas colunas (Status, Ações) continua igual ... */}
                   <TableCell className="text-center">
                     <Badge
                       variant={booking.status === "booked" ? "default" : booking.status === "completed" ? "secondary" : "outline"}
@@ -371,18 +418,18 @@ export function AgendamentosPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {booking.status === "booked" || booking.status === "confirmed" ? (
+                    {(booking.status === "booked" || booking.status === "confirmed") && (
                       <Button variant="outline" size="sm" onClick={() => handleMarkAsCompleted(booking._id)}>
                         <CheckCircle2 className="mr-2 h-4 w-4" />
                         Concluir
                       </Button>
-                    ) : null}
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
                       className="ml-2 h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100"
-                      onClick={() => setBookingToDelete(booking._id)}
-                      disabled={isDeleting}
+                      onClick={bookingIsPast ? () => setBookingToDelete(booking._id) : () => handleCancelBooking(booking._id)}
+                      disabled={isDeleting || booking.status === "canceled"}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

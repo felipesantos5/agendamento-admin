@@ -92,11 +92,10 @@ export function AbsencesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Gerenciar Folgas e Feriados</h1>
       <Card>
         <CardHeader>
           <CardTitle>Calendário de Folgas</CardTitle>
-          <CardDescription>Selecione uma data no calendário e clique no botão para bloquear ou desbloquear o dia inteiro.</CardDescription>
+          <CardDescription>Selecione uma data no calendário e clique no botão para desativar o atendimento desse dia.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Coluna da Esquerda: Calendário e Ação */}
