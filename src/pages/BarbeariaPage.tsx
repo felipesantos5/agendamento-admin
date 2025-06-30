@@ -319,7 +319,7 @@ export function BarbeariaConfigPage() {
           </div>
 
           <div className="space-y-2">
-            <ColorSelector label="Cor principal" color={formData.LogoBackgroundColor || "#000"} onChange={handleLogoBackgroundColorChange} />
+            <ColorSelector label="Cor principal" color={formData.LogoBackgroundColor || "#000000"} onChange={handleLogoBackgroundColorChange} />
             <p className="text-xs text-muted-foreground">Esta cor será usada no fundo da sua logo.</p>
           </div>
 
