@@ -112,7 +112,7 @@ export function AbsencesPage() {
                   color: "hsl(var(--destructive-foreground))",
                 },
               }}
-              className="rounded-md border shadow-sm"
+              className="rounded-md border shadow-sm w-full max-w-[384px]"
             />
             <AlertDialog>
               <AlertDialogTrigger asChild>
