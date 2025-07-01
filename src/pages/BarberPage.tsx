@@ -407,7 +407,7 @@ export function BarberPage() {
 
                           {/* Container para os inputs de hora e o botão de deletar */}
                           <div className="flex flex-col gap-2 xs:flex-row items-end xs:items-center">
-                            <div className="w-full">
+                            <div className="input-barber">
                               <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
                                 Início
                               </Label>
@@ -418,7 +418,7 @@ export function BarberPage() {
                                 onChange={(e) => handleAvailabilityChange(index, "start", e.target.value)}
                               />
                             </div>
-                            <div className="w-full">
+                            <div className="">
                               <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
                                 Fim
                               </Label>
