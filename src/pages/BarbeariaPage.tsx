@@ -264,7 +264,7 @@ export function BarbeariaConfigPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
-            <Textarea id="description" name="description" value={formData.description || ""} onChange={handleInputChange} />
+            <Textarea id="description" name="description" className="h-40" value={formData.description || ""} onChange={handleInputChange} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
