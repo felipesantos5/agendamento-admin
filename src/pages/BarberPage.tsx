@@ -383,16 +383,17 @@ export function BarberPage() {
                       {(currentBarberForm.availability || []).map((slot, index) => (
                         <div
                           key={index}
-                          // ✅ LÓGICA DE RESPONSIVIDADE AQUI
-                          className="flex flex-col gap-2 p-3 border rounded-md"
+                          // 1. O container principal agora tem um layout de 1 coluna no mobile
+                          // e muda para um layout mais complexo apenas em telas médias (md) ou maiores.
+                          className="grid grid-cols-1 md:grid-cols-[1.5fr_2fr] md:items-end gap-4 p-3 border rounded-lg bg-secondary/50"
                         >
-                          {/* O Select do dia ocupará a primeira coluna */}
-                          <div className="sm:col-span-1">
+                          {/* Seção do Dia (coluna 1 no desktop) */}
+                          <div className="w-full">
                             <Label htmlFor={`day-${index}`} className="text-xs text-muted-foreground">
                               Dia
                             </Label>
                             <Select value={slot.day} onValueChange={(value) => handleAvailabilityChange(index, "day", value)}>
-                              <SelectTrigger id={`day-${index}`} className="w-full xs:w-auto">
+                              <SelectTrigger id={`day-${index}`} className="w-full mt-1">
                                 <SelectValue placeholder="Dia" />
                               </SelectTrigger>
                               <SelectContent>
@@ -405,39 +406,52 @@ export function BarberPage() {
                             </Select>
                           </div>
 
-                          {/* Container para os inputs de hora e o botão de deletar */}
-                          <div className="flex flex-col gap-2 xs:flex-row items-end xs:items-center">
-                            <div className="input-barber">
-                              <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
-                                Início
-                              </Label>
-                              <Input
-                                id={`start-${index}`}
-                                type="time"
-                                value={slot.start}
-                                onChange={(e) => handleAvailabilityChange(index, "start", e.target.value)}
-                              />
+                          {/* Seção dos Horários e Botão (coluna 2 no desktop) */}
+                          <div>
+                            {/* 2. Este container flexível garante que os itens fiquem alinhados e com espaço */}
+                            <div className="flex flex-col md:flex-row items-end gap-2 ">
+                              {/* Container do "Início" */}
+                              <div className="flex-grow w-full">
+                                <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
+                                  Início
+                                </Label>
+                                <Input
+                                  id={`start-${index}`}
+                                  type="time"
+                                  value={slot.start}
+                                  onChange={(e) => handleAvailabilityChange(index, "start", e.target.value)}
+                                  className="mt-1 w-full"
+                                />
+                              </div>
+
+                              {/* Container do "Fim" */}
+                              <div className="flex-grow w-full">
+                                <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
+                                  Fim
+                                </Label>
+                                <Input
+                                  id={`end-${index}`}
+                                  type="time"
+                                  value={slot.end}
+                                  onChange={(e) => handleAvailabilityChange(index, "end", e.target.value)}
+                                  className="mt-1 w-full"
+                                />
+                              </div>
+
+                              {/* Container do botão de deletar */}
+                              <div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeAvailabilitySlot(index)}
+                                  aria-label="Remover horário"
+                                  className="h-9 w-9" // Ajuste de tamanho para alinhar com os inputs
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
                             </div>
-                            <div className="">
-                              <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
-                                Fim
-                              </Label>
-                              <Input
-                                id={`end-${index}`}
-                                type="time"
-                                value={slot.end}
-                                onChange={(e) => handleAvailabilityChange(index, "end", e.target.value)}
-                              />
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeAvailabilitySlot(index)}
-                              aria-label="Remover horário"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500 md:mt-4" />
-                            </Button>
                           </div>
                         </div>
                       ))}
