@@ -124,7 +124,7 @@ export function AbsencesPage() {
                   opacity: 0.6,
                 },
               }}
-              className="rounded-md border shadow-sm w-full max-w-[384px] min-h-[360px]"
+              className="rounded-md border shadow-sm w-full max-w-[384px] min-h-[380px]"
             />
             <AlertDialog>
               <AlertDialogTrigger asChild>

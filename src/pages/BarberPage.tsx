@@ -384,7 +384,7 @@ export function BarberPage() {
                         <div
                           key={index}
                           // ✅ LÓGICA DE RESPONSIVIDADE AQUI
-                          className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] sm:items-end gap-2 p-3 border rounded-md"
+                          className="flex flex-col gap-2 p-3 border rounded-md"
                         >
                           {/* O Select do dia ocupará a primeira coluna */}
                           <div className="sm:col-span-1">
