@@ -113,6 +113,7 @@ export function AbsencesPage() {
                 blocked: blockedDates,
                 past: { before: today },
               }}
+              showOutsideDays={false}
               modifiersStyles={{
                 blocked: {
                   backgroundColor: "hsl(var(--destructive))",
