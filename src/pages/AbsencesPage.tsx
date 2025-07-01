@@ -90,6 +90,9 @@ export function AbsencesPage() {
     return day ? day._id : null;
   };
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -105,14 +108,23 @@ export function AbsencesPage() {
               selected={selectedDate}
               onSelect={setSelectedDate}
               locale={ptBR}
-              modifiers={{ blocked: blockedDates }}
+              disabled={{ before: today }}
+              modifiers={{
+                blocked: blockedDates,
+                past: { before: today },
+              }}
               modifiersStyles={{
                 blocked: {
                   backgroundColor: "hsl(var(--destructive))",
                   color: "hsl(var(--destructive-foreground))",
                 },
+                past: {
+                  textDecoration: "line-through",
+                  cursor: "not-allowed",
+                  opacity: 0.6,
+                },
               }}
-              className="rounded-md border shadow-sm w-full max-w-[384px]"
+              className="rounded-md border shadow-sm w-full max-w-[384px] min-h-[360px]"
             />
             <AlertDialog>
               <AlertDialogTrigger asChild>
