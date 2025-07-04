@@ -27,6 +27,7 @@ import { PhoneFormat } from "@/helper/phoneFormater";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/config/BackendUrl";
+import { AgendaView } from "@/components/AgendaView";
 
 // Contexto do AdminLayout
 interface AdminOutletContext {
@@ -265,6 +266,23 @@ export function AgendamentosPage() {
   //   }
   // };
 
+  const agendaEvents = useMemo(() => {
+    return bookings.map((booking) => {
+      const startTime = parseISO(booking.time);
+      // Supondo que a duração do serviço está em minutos
+      const serviceDuration = booking.service?.duration || 60;
+      const endTime = new Date(startTime.getTime() + serviceDuration * 60000);
+
+      return {
+        _id: booking._id,
+        title: `${booking.customer.name} - ${booking.service.name}`,
+        start: startTime,
+        end: endTime,
+        resource: booking.barber, // Guarda a info do barbeiro
+      };
+    });
+  }, [bookings]);
+
   if (isLoading && bookings.length === 0 && allBarbers.length === 0)
     return <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>;
   if (error && bookings.length === 0) return <p className="text-center p-10 text-red-500">{error}</p>;
@@ -446,6 +464,8 @@ export function AgendamentosPage() {
             })}
           </TableBody>
         </Table>
+
+        <AgendaView events={agendaEvents} />
 
         <AlertDialog open={!!bookingToDelete} onOpenChange={() => setBookingToDelete(null)}>
           <AlertDialogContent>
