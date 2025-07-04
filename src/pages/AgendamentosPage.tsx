@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { format, parseISO, isPast, differenceInMilliseconds, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Para o filtro
 import { Switch } from "@/components/ui/switch"; // Para o toggle
 import { Label } from "@/components/ui/label"; // Para os rótulos dos filtros
-import { CheckCircle2, Filter, Trash2 } from "lucide-react";
+import { CheckCircle2, Filter, PlusCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -271,8 +271,15 @@ export function AgendamentosPage() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex justify-between items-center">
         <CardTitle>Agendamentos</CardTitle>
+
+        <Link to="novo-agendamento">
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Novo Agendamento
+          </Button>
+        </Link>
       </CardHeader>
       <CardContent>
         {error && !isLoading && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
@@ -340,7 +347,7 @@ export function AgendamentosPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">Data e Hora</TableHead>
-              <TableHead className="text-center">Cliente</TableHead>
+              <TableHead className="text-center sm:text-left">Cliente</TableHead>
               <TableHead className="text-center">Telefone</TableHead>
               <TableHead className="text-center">Serviço</TableHead>
               {isUserAdmin && <TableHead className="text-center">Profissional</TableHead>}

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Outlet, Link, useParams, useLocation } from "react-router-dom";
-import { LayoutDashboard, Settings, Users, Scissors, CalendarDays, ShieldAlert, LogOut, X, Menu, CalendarOff } from "lucide-react"; // Ícones de exemplo
+import { LayoutDashboard, Settings, Users, Scissors, CalendarDays, ShieldAlert, LogOut, X, Menu, CalendarOff, Package } from "lucide-react"; // Ícones de exemplo
 import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/services/api";
 import { Button } from "@/components/ui/button";
@@ -127,6 +127,12 @@ export function AdminLayout() {
       label: "Agendamentos",
       icon: <CalendarDays className="mr-2 h-4 w-4" />,
       roles: ["admin", "barber"],
+    },
+    {
+      to: "planos",
+      label: "Planos",
+      icon: <Package className="mr-2 h-4 w-4" />,
+      roles: ["admin"],
     },
   ];
 
