@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Para o filtro
 import { Switch } from "@/components/ui/switch"; // Para o toggle
 import { Label } from "@/components/ui/label"; // Para os rótulos dos filtros
-import { CheckCircle2, Filter, PlusCircle, Trash2 } from "lucide-react";
+import { CheckCircle2, Filter, Phone, PlusCircle, Scissors, Trash2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -28,6 +28,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/config/BackendUrl";
 import { AgendaView } from "@/components/AgendaView";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Contexto do AdminLayout
 interface AdminOutletContext {
@@ -51,6 +52,7 @@ interface Booking {
     _id: string;
     name: string;
     price: number;
+    duration: number;
   };
   time: string;
   status: string;
@@ -62,6 +64,38 @@ interface Barber {
   name: string;
 }
 
+interface PopulatedBooking {
+  _id: string;
+  time: string; // Vem como string no formato ISO da API
+  status: "booked" | "confirmed" | "completed" | "canceled";
+  review?: string; // ID da avaliação, se houver
+
+  // Campos que foram populados e podem ser nulos se o item original foi deletado
+  customer: {
+    _id: string;
+    name: string;
+    phone: string;
+  } | null;
+
+  barber: {
+    _id: string;
+    name: string;
+  } | null;
+
+  service: {
+    _id: string;
+    name: string;
+    price: number;
+    duration: number;
+  } | null;
+
+  barbershop: {
+    _id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
+
 const daysOfWeekForFilter = [
   { value: "1", label: "Segunda-feira" },
   { value: "2", label: "Terça-feira" },
@@ -71,6 +105,8 @@ const daysOfWeekForFilter = [
   { value: "6", label: "Sábado" },
   { value: "0", label: "Domingo" },
 ];
+
+const BARBER_COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#000000", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
 
 export function AgendamentosPage() {
   const { barbershopId } = useOutletContext<AdminOutletContext>();
@@ -86,6 +122,8 @@ export function AgendamentosPage() {
   const [showPastAppointments, setShowPastAppointments] = useState<boolean>(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isUserAdmin = user?.role === "admin";
 
@@ -252,36 +290,83 @@ export function AgendamentosPage() {
     }
   };
 
-  // const getStatusVariant = (status: Booking["status"]) => {
-  //   switch (status) {
-  //     case "completed":
-  //       return "success";
-  //     case "canceled":
-  //       return "destructive";
-  //     case "confirmed":
-  //       return "default";
-  //     case "booked":
-  //     default:
-  //       return "secondary";
-  //   }
-  // };
+  const handleSelectEvent = (event: any) => {
+    // O evento da agenda tem o nosso agendamento original no campo 'resource'
+    const fullBookingData = event.resource;
+    setSelectedBooking(fullBookingData);
+    setIsModalOpen(true);
+  };
 
-  const agendaEvents = useMemo(() => {
-    return bookings.map((booking) => {
-      const startTime = parseISO(booking.time);
-      // Supondo que a duração do serviço está em minutos
-      const serviceDuration = booking.service?.duration || 60;
-      const endTime = new Date(startTime.getTime() + serviceDuration * 60000);
+  const barberColorMap = useMemo(() => {
+    if (!bookings || bookings.length === 0) {
+      return new Map<string, string>();
+    }
 
-      return {
-        _id: booking._id,
-        title: `${booking.customer.name} - ${booking.service.name}`,
-        start: startTime,
-        end: endTime,
-        resource: booking.barber, // Guarda a info do barbeiro
-      };
+    // Primeiro, encontramos todos os IDs de barbeiros únicos na lista de agendamentos
+    const uniqueBarberIds = [...new Set(bookings.map((b) => b.barber?._id).filter(Boolean))];
+
+    const colorMap = new Map<string, string>();
+    uniqueBarberIds.forEach((barberId, index) => {
+      // Atribui uma cor da paleta baseado na posição do barbeiro na lista de únicos
+      const colorIndex = index % BARBER_COLORS.length;
+      colorMap.set(barberId, BARBER_COLORS[colorIndex]);
     });
-  }, [bookings]);
+
+    return colorMap;
+  }, [bookings]); // Este cálculo é refeito sempre que os agendamentos mudam
+
+  // 3. Formata os eventos para a agenda, agora usando o mapa de cores
+  const agendaEvents = useMemo(() => {
+    return bookings
+      .map((booking) => {
+        if (!booking.customer || !booking.service) return null;
+
+        const startTime = parseISO(booking.time);
+        const serviceDuration = booking.service?.duration || 60;
+        const endTime = new Date(startTime.getTime() + serviceDuration * 60000);
+
+        // Pega a cor correta do mapa que criamos. Usa uma cor padrão se algo der errado.
+        const eventColor = barberColorMap.get(booking.barber?._id) || "#333333";
+
+        return {
+          _id: booking._id,
+          title: `${booking.customer?.name || "Cliente Removido"} - ${booking.service?.name || "Serviço Removido"}`,
+          start: startTime,
+          end: endTime,
+          resource: {
+            ...booking,
+            color: eventColor, // Adiciona a cor ao recurso do evento
+          },
+        };
+      })
+      .filter((event): event is NonNullable<typeof event> => event !== null);
+  }, [bookings, barberColorMap]);
+
+  const getStatusInfo = (status: PopulatedBooking["status"]) => {
+    switch (status) {
+      case "completed":
+        return {
+          text: "Concluído",
+          className: "bg-green-100 text-green-800 border-green-200",
+        };
+      case "canceled":
+        return {
+          text: "Cancelado",
+          className: "bg-red-100 text-red-800 border-red-200",
+        };
+      case "confirmed":
+        return {
+          text: "Confirmado",
+          className: "bg-blue-100 text-blue-800 border-blue-200",
+        };
+      case "booked":
+      default:
+        return {
+          text: "Agendado",
+          className: "bg-gray-200 text-gray-800 border-gray-300",
+        };
+    }
+  };
 
   if (isLoading && bookings.length === 0 && allBarbers.length === 0)
     return <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>;
@@ -465,7 +550,57 @@ export function AgendamentosPage() {
           </TableBody>
         </Table>
 
-        <AgendaView events={agendaEvents} />
+        <AgendaView events={agendaEvents} onSelectEvent={handleSelectEvent} />
+
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            {selectedBooking && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Detalhes do Agendamento</DialogTitle>
+                  <DialogDescription>{format(new Date(selectedBooking.time), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Cliente</p>
+                      <p className="font-semibold">{selectedBooking.customer?.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Telefone</p>
+                      <a href={`https://wa.me/55${selectedBooking.customer?.phone}`} target="_blank" className="font-semibold underline">
+                        {selectedBooking.customer?.phone}
+                      </a>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Scissors className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Serviço</p>
+                      <p className="font-semibold">{selectedBooking.service?.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Profissional</p>
+                      <p className="font-semibold">{selectedBooking.barber?.name}</p>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Badge className={getStatusInfo(selectedBooking.status as "booked" | "confirmed" | "completed" | "canceled").className}>
+                    {getStatusInfo(selectedBooking.status as "booked" | "confirmed" | "completed" | "canceled").text}
+                  </Badge>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <AlertDialog open={!!bookingToDelete} onOpenChange={() => setBookingToDelete(null)}>
           <AlertDialogContent>

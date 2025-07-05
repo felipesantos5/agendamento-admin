@@ -1,6 +1,8 @@
-import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer, Views, View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import useMediaQuery from "@/hooks/useMediaQuery";
+import { useEffect, useState } from "react";
 
 // Tipagem para os agendamentos que vêm da sua API
 interface BookingEvent {
@@ -42,11 +44,31 @@ const messages = {
 
 interface AgendaViewProps {
   events: BookingEvent[];
+  onSelectEvent: (event: BookingEvent) => void;
 }
 
-export function AgendaView({ events }: AgendaViewProps) {
+export function AgendaView({ events, onSelectEvent }: AgendaViewProps) {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  const minTime = new Date();
+  minTime.setHours(5, 0, 0);
+
+  const maxTime = new Date();
+  maxTime.setHours(23, 0, 0);
+
+  const [currentView, setCurrentView] = useState<View>(Views.WEEK);
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    if (isMobile) {
+      setCurrentView(Views.DAY);
+    } else {
+      setCurrentView(Views.WEEK);
+    }
+  }, [isMobile]);
+
   return (
-    <div className="h-[75vh] bg-white p-4 rounded-lg shadow">
+    <div className="h-[75vh] bg-white p-2 md:p-4 rounded-lg shadow">
       <Calendar
         localizer={localizer}
         events={events}
@@ -54,13 +76,24 @@ export function AgendaView({ events }: AgendaViewProps) {
         endAccessor="end"
         culture="pt-BR"
         messages={messages}
-        defaultView={Views.WEEK} // A visão padrão será a da semana
-        views={[Views.WEEK, Views.DAY, Views.AGENDA]} // Visões disponíveis
+        onSelectEvent={onSelectEvent}
+        view={currentView}
+        onView={(view) => setCurrentView(view)}
+        //views={isMobile ? [Views.DAY] : [Views.WEEK, Views.DAY, Views.AGENDA]}
+        scrollToTime={new Date()}
         style={{ height: "100%" }}
+        min={minTime}
+        max={maxTime}
+        date={currentDate}
+        onNavigate={(newDate) => setCurrentDate(newDate)}
         eventPropGetter={(event) => {
-          // Aqui você pode customizar o estilo de cada evento.
-          // Ex: mudar a cor com base no barbeiro (event.resource)
-          return { style: { backgroundColor: "#3174ad", border: "none" } };
+          const eventColor = event.resource?.color;
+
+          const style = {
+            backgroundColor: eventColor || "#333333",
+          };
+
+          return { style };
         }}
       />
     </div>
