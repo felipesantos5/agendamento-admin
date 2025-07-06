@@ -153,13 +153,6 @@ export function BarbeariaConfigPage() {
     }));
   };
 
-  const handleLogoBackgroundColorChange = (newColor: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      LogoBackgroundColor: newColor,
-    }));
-  };
-
   const handleWorkingHourChange = (index: number, field: keyof WorkingHour, value: string) => {
     setFormData((prev) => {
       const updatedWorkingHours = [...(prev?.workingHours || [])];
