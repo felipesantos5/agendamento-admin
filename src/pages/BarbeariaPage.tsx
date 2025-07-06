@@ -299,10 +299,6 @@ export function BarbeariaConfigPage() {
               initialImageUrl={formData.logoUrl || null}
               onFileSelect={(file) => {
                 setLogoFile(file);
-                // Se um novo arquivo é selecionado, você pode querer que o formData.logoUrl
-                // seja limpo visualmente até que o novo upload seja feito,
-                // ou pode deixar o ImageUploader mostrar o preview do novo arquivo.
-                // A lógica atual do ImageUploader já mostra o preview do novo arquivo.
               }}
               aspectRatio="square"
             />
@@ -316,11 +312,6 @@ export function BarbeariaConfigPage() {
               onChange={handleThemeColorChange}
             />
             <p className="text-xs text-muted-foreground">Esta cor será usada em botões e destaques na página da sua barbearia.</p>
-          </div>
-
-          <div className="space-y-2">
-            <ColorSelector label="Cor principal" color={formData.LogoBackgroundColor || "#000000"} onChange={handleLogoBackgroundColorChange} />
-            <p className="text-xs text-muted-foreground">Esta cor será usada no fundo da sua logo.</p>
           </div>
 
           {/* <div className="space-y-2">
