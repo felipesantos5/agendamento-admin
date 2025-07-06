@@ -55,3 +55,35 @@ interface Service {
   duration: number;
   barbershop: string;
 }
+
+export interface PopulatedBooking {
+  _id: string;
+  time: string; // Vem como string no formato ISO da API
+  status: "booked" | "confirmed" | "completed" | "canceled";
+  review?: string; // ID da avaliação, opcional
+
+  // Campos que foram populados e podem ser nulos se o item original foi deletado
+  customer: {
+    _id: string;
+    name: string;
+    phone: string;
+  } | null;
+
+  barber: {
+    _id: string;
+    name: string;
+  } | null;
+
+  service: {
+    _id: string;
+    name: string;
+    price: number;
+    duration: number;
+  } | null;
+
+  barbershop: {
+    _id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
