@@ -136,3 +136,7 @@
 .rbc-timeslot-group {
   min-height: 100px !important;
 }
+
+.rbc-agenda-date-cell {
+  background: white !important;
+}
