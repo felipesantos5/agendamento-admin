@@ -3,6 +3,7 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import useMediaQuery from "@/hooks/useMediaQuery";
 import { useEffect, useState } from "react";
+import { AgendaEvent } from "./components/EventCard";
 
 // Tipagem para os agendamentos que vêm da sua API
 interface BookingEvent {
@@ -10,7 +11,7 @@ interface BookingEvent {
   title: string; // Ex: "João Silva - Corte"
   start: Date;
   end: Date;
-  resource?: any; // Pode usar para associar o agendamento a um barbeiro
+  resource: any; // Pode usar para associar o agendamento a um barbeiro
 }
 
 // Configuração do localizador para usar date-fns com português do Brasil
@@ -85,6 +86,9 @@ export function AgendaView({ events, onSelectEvent }: AgendaViewProps) {
         min={minTime}
         max={maxTime}
         date={currentDate}
+        components={{
+          event: AgendaEvent,
+        }}
         onNavigate={(newDate) => setCurrentDate(newDate)}
         eventPropGetter={(event) => {
           const eventColor = event.resource?.color;

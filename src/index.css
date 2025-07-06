@@ -120,6 +120,10 @@
   }
 }
 
+.rbc-day-slot .rbc-event-label {
+  display: none !important;
+}
+
 .input-barber {
   width: -webkit-fill-available;
 }
@@ -127,4 +131,8 @@
 .rbc-current-time-indicator {
   height: 3px !important;
   background-color: red !important;
+}
+
+.rbc-timeslot-group {
+  min-height: 100px !important;
 }
