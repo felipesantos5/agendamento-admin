@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { format, parseISO } from "date-fns";
+import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Phone, PlusCircle, Scissors, User } from "lucide-react";
+import { CheckCircle, Loader2, Phone, PlusCircle, Scissors, User, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -103,9 +103,10 @@ export function AgendamentosPage() {
   const [error, setError] = useState<string | null>(null);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBarberId, setSelectedBarberId] = useState<string>("all");
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const isUserAdmin = user?.role === "admin";
 
@@ -213,8 +214,41 @@ export function AgendamentosPage() {
       .filter((event): event is NonNullable<typeof event> => event !== null);
   }, [filteredBookings, barberColorMap]);
 
-  const getStatusInfo = (status: PopulatedBooking["status"]) => {
-    switch (status) {
+  const handleUpdateBookingStatus = async (bookingId: string, status: "completed" | "canceled") => {
+    setIsUpdatingStatus(true);
+    const originalBookings = [...bookings];
+
+    // Atualização otimista da UI
+    setBookings((prev) => prev.map((b) => (b._id === bookingId ? { ...b, status } : b)));
+
+    try {
+      await apiClient.put(`/barbershops/${barbershopId}/bookings/${bookingId}/status`, { status });
+      toast.success(`Agendamento atualizado para "${status === "completed" ? "Concluído" : "Cancelado"}"!`);
+      setIsModalOpen(false); // Fecha o modal após a ação
+    } catch (error) {
+      setBookings(originalBookings); // Reverte em caso de erro
+      toast.error("Falha ao atualizar o status do agendamento.");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const getStatusInfo = (booking: PopulatedBooking) => {
+    // 1. Verifica se a data do agendamento já passou
+    const bookingIsPast = isPast(new Date(booking.time));
+
+    // 2. Lógica de status
+    // Se o agendamento já passou E o status ainda é "booked",
+    // consideramos ele como "Ocorrido" (pendente de confirmação)
+    if (bookingIsPast && booking.status === "booked") {
+      return {
+        text: "Ocorrido",
+        className: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      };
+    }
+
+    // A lógica para os outros status continua a mesma
+    switch (booking.status) {
       case "completed":
         return {
           text: "Concluído",
@@ -289,8 +323,7 @@ export function AgendamentosPage() {
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Cliente</p>
-                      <p className="font-semibold">{selectedBooking.customer?.name}</p>
+                      <p className="text-sm text-muted-foreground">Cliente</p> <p className="font-semibold">{selectedBooking.customer?.name}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -305,22 +338,41 @@ export function AgendamentosPage() {
                   <div className="flex items-center gap-3">
                     <Scissors className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Serviço</p>
-                      <p className="font-semibold">{selectedBooking.service?.name}</p>
+                      <p className="text-sm text-muted-foreground">Serviço</p> <p className="font-semibold">{selectedBooking.service?.name}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Profissional</p>
-                      <p className="font-semibold">{selectedBooking.barber?.name}</p>
+                      <p className="text-sm text-muted-foreground">Profissional</p> <p className="font-semibold">{selectedBooking.barber?.name}</p>
                     </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Badge className={getStatusInfo(selectedBooking.status as "booked" | "confirmed" | "completed" | "canceled").className}>
-                    {getStatusInfo(selectedBooking.status as "booked" | "confirmed" | "completed" | "canceled").text}
-                  </Badge>
+                {/* Rodapé com o Status e os Botões de Ação */}
+                <DialogFooter className="flex flex-col sm:flex-row sm:justify-between items-center gap-2">
+                  <Badge className={getStatusInfo(selectedBooking).className}>{getStatusInfo(selectedBooking).text}</Badge>
+
+                  {/* Botões só aparecem se o agendamento estiver 'booked' ou 'confirmed' */}
+                  {(selectedBooking.status === "booked" || selectedBooking.status === "confirmed") && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleUpdateBookingStatus(selectedBooking._id, "canceled")}
+                        disabled={isUpdatingStatus}
+                      >
+                        {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                        Cancelar
+                      </Button>
+                      <Button
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => handleUpdateBookingStatus(selectedBooking._id, "completed")}
+                        disabled={isUpdatingStatus}
+                      >
+                        {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                        Concluir
+                      </Button>
+                    </div>
+                  )}
                 </DialogFooter>
               </>
             )}
