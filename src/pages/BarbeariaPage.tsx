@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Trash2, PlusCircle } from "lucide-react"; // Ícones
+import { Trash2, PlusCircle, Download } from "lucide-react"; // Ícones
 import { PhoneFormat } from "@/helper/phoneFormater";
 import { CepFormat } from "@/helper/cepFormarter";
 import { ImageUploader } from "./ImageUploader";
@@ -46,6 +46,7 @@ interface BarbershopData {
   workingHours: WorkingHour[];
   themeColor: string;
   LogoBackgroundColor: string;
+  qrcode: string;
 }
 
 // Estado inicial para o formulário (parcial, pois será preenchido após o fetch)
@@ -67,6 +68,7 @@ const initialBarbershopState: Partial<BarbershopData> = {
   contact: "",
   instagram: "",
   slug: "",
+  qrcode: "",
   workingHours: [],
 };
 
@@ -86,6 +88,7 @@ export function BarbeariaConfigPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false); // Novo estado para upload
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
 
   useEffect(() => {
     if (!barbershopId) {
@@ -101,6 +104,9 @@ export function BarbeariaConfigPage() {
       try {
         const response = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}`);
         setFormData(response.data);
+
+        const url = `${API_BASE_URL}/barbershops/${barbershopId}/qrcode`;
+        setQrCodeUrl(url);
       } catch (err) {
         console.error("Erro ao buscar dados da barbearia:", err);
         setError("Falha ao carregar os dados da barbearia. Verifique o console.");
@@ -237,6 +243,35 @@ export function BarbeariaConfigPage() {
     }
   };
 
+  const handleDownload = async () => {
+    if (!qrCodeUrl) return;
+
+    try {
+      // Baixa a imagem como um "blob" (um tipo de dado binário)
+      const response = await fetch(qrCodeUrl);
+      const blob = await response.blob();
+
+      // Cria uma URL temporária no navegador para este blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Cria um elemento de link <a> invisível
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `qrcode-barbearia-${barbershopId}.png`); // Define o nome do arquivo
+
+      // Adiciona o link ao corpo do documento e o "clica" programaticamente
+      document.body.appendChild(link);
+      link.click();
+
+      // Limpa e remove o link temporário
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Erro ao baixar o QR Code:", error);
+      // Adicione um toast.error aqui se quiser
+    }
+  };
+
   if (isLoading && !formData?.name) return <p className="text-center p-10">Carregando configurações...</p>;
   if (error && !formData?.name) return <p className="text-center p-10 text-red-600">{error}</p>;
   if (!formData?.name && !isLoading) return <p className="text-center p-10">Nenhuma configuração encontrada para esta barbearia.</p>;
@@ -307,10 +342,26 @@ export function BarbeariaConfigPage() {
             <p className="text-xs text-muted-foreground">Esta cor será usada em botões e destaques na página da sua barbearia.</p>
           </div>
 
-          {/* <div className="space-y-2">
-            <Label htmlFor="logoUrl">URL da Logo</Label>
-            <Input id="logoUrl" name="logoUrl" type="url" value={formData.logoUrl || ""} onChange={handleInputChange} />
-          </div> */}
+          <CardHeader className="px-0!">
+            <CardTitle>QR Code para Agendamento</CardTitle>
+            <CardDescription>Use este QR Code em materiais de divulgação para que seus clientes possam agendar facilmente.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            {qrCodeUrl ? (
+              <>
+                <div className="p-4 bg-white rounded-lg border">
+                  <img src={qrCodeUrl} alt="QR Code de Agendamento" width={200} height={200} />
+                </div>
+
+                <Button onClick={handleDownload}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Baixar QR Code
+                </Button>
+              </>
+            ) : (
+              <p>Carregando QR Code...</p>
+            )}
+          </CardContent>
 
           {/* Endereço */}
           <fieldset className="border p-4 rounded-md">
