@@ -262,16 +262,22 @@ export function AgendamentosPage() {
 
     const initialBarberId = selectedBarberId !== "all" ? selectedBarberId : "";
 
-    // 2. Nós salvamos essas datas diretamente no nosso estado 'newBlockData'.
+    // 2. O react-big-calendar trabalha com datas locais, mas quando convertemos para ISO string
+    // elas são convertidas para UTC. Precisamos garantir que o horário local seja preservado.
+    // Exemplo: se o usuário selecionou 9h no calendário, queremos que seja 9h no horário de Brasília
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+
+    // 3. Nós salvamos essas datas diretamente no nosso estado 'newBlockData'.
     //    Aqui garantimos que startTime e endTime terão os valores corretos.
     setNewBlockData({
-      startTime: start,
-      endTime: end,
+      startTime: startTime,
+      endTime: endTime,
       title: "",
       barberId: initialBarberId,
     });
 
-    // 3. Abrimos o modal, que já estará pré-preenchido com esses horários.
+    // 4. Abrimos o modal, que já estará pré-preenchido com esses horários.
     setIsBlockModalOpen(true);
   };
 
@@ -282,12 +288,29 @@ export function AgendamentosPage() {
     }
     setIsCreatingBlock(true);
     try {
+      // Garantir que as datas sejam enviadas corretamente
+      // Se o usuário selecionou 9h no calendário, queremos que seja 9h no horário de Brasília
+      const startTime = newBlockData.startTime;
+      const endTime = newBlockData.endTime;
+
+      if (!startTime || !endTime) {
+        toast.error("Horários inválidos.");
+        return;
+      }
+
       const payload = {
         title: newBlockData.title,
-        startTime: newBlockData.startTime?.toISOString(),
-        endTime: newBlockData.endTime?.toISOString(),
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
         barberId: newBlockData.barberId,
       };
+
+      console.log("Payload do bloqueio:", payload);
+      console.log("Horário local selecionado:", {
+        start: startTime.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+        end: endTime.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      });
+
       await apiClient.post(`/api/barbershops/${barbershopId}/time-blocks`, payload);
       toast.success("Horário bloqueado com sucesso!");
       setIsBlockModalOpen(false);
