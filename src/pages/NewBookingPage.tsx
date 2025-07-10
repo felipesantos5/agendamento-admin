@@ -175,7 +175,7 @@ export function NewBookingPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={formData.date} onSelect={(date) => handleInputChange("date", date)} initialFocus />
+                  <Calendar mode="single" locale={ptBR} selected={formData.date} onSelect={(date) => handleInputChange("date", date)} initialFocus />
                 </PopoverContent>
               </Popover>
             </div>
