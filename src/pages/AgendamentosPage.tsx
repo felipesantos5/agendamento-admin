@@ -19,10 +19,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import apiClient from "@/services/api";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { AgendaView } from "@/components/AgendaView";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 // Contexto do AdminLayout
 interface AdminOutletContext {
@@ -90,58 +90,64 @@ interface PopulatedBooking {
   } | null;
 }
 
+interface TimeBlock {
+  _id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  barber: string; // ID do barbeiro
+}
+
 const BARBER_COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#000000", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
 
 export function AgendamentosPage() {
   const { barbershopId } = useOutletContext<AdminOutletContext>();
 
-  const { user } = useAuth();
-
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [allBarbers, setAllBarbers] = useState<Barber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBarberId, setSelectedBarberId] = useState<string>("all");
+  const [selectedBarberId, setSelectedBarberId] = useState<string>(() => {
+    // Tenta ler o valor salvo. Se não houver, usa 'all' como padrão.
+    return localStorage.getItem("agendaBarberFilter") || "all";
+  });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  const isUserAdmin = user?.role === "admin";
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [newBlockData, setNewBlockData] = useState({ title: "", startTime: null as Date | null, endTime: null as Date | null, barberId: "" });
+  const [isCreatingBlock, setIsCreatingBlock] = useState(false);
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
+
+  useEffect(() => {
+    // Sempre que 'selectedBarberId' mudar, salva o novo valor no localStorage.
+    localStorage.setItem("agendaBarberFilter", selectedBarberId);
+  }, [selectedBarberId]);
+
+  const fetchPageData = async () => {
+    if (!barbershopId) return;
+    setIsLoading(true);
+    try {
+      const [bookingsRes, barbersRes, timeBlocksRes] = await Promise.all([
+        apiClient.get(`/barbershops/${barbershopId}/bookings`),
+        apiClient.get(`/barbershops/${barbershopId}/barbers`),
+        apiClient.get(`/api/barbershops/${barbershopId}/time-blocks`),
+      ]);
+      setBookings(bookingsRes.data);
+      setAllBarbers(barbersRes.data);
+      setTimeBlocks(timeBlocksRes.data);
+    } catch (err: any) {
+      console.error("Erro ao buscar dados da página:", err);
+      toast.error(err.response?.data?.error || "Não foi possível carregar os dados.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!barbershopId) return;
-
-    const fetchPageData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        let bookingsResponse;
-
-        if (isUserAdmin) {
-          // Se for admin, busca todos os agendamentos da barbearia E a lista de barbeiros para o filtro
-          const [resBookings, resBarbers] = await Promise.all([
-            apiClient.get(`/barbershops/${barbershopId}/bookings`),
-            apiClient.get(`/barbershops/${barbershopId}/barbers`),
-          ]);
-          bookingsResponse = resBookings;
-          setAllBarbers(resBarbers.data);
-        } else {
-          // Se for barbeiro, busca apenas os SEUS agendamentos pela nova rota
-          bookingsResponse = await apiClient.get(`/barbershops/${barbershopId}/barbers/bookings/barber`);
-          // Não precisa buscar todos os barbeiros, pois o filtro não será mostrado
-        }
-
-        setBookings(bookingsResponse.data);
-      } catch (err: any) {
-        console.error("Erro ao buscar dados de agendamentos:", err);
-        setError(err.response?.data?.error || "Não foi possível carregar os dados.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
     fetchPageData();
   }, [barbershopId]);
@@ -164,55 +170,71 @@ export function AgendamentosPage() {
   const handleSelectEvent = (event: any) => {
     // O evento da agenda tem o nosso agendamento original no campo 'resource'
     const fullBookingData = event.resource;
+
+    if (!fullBookingData) {
+      console.error("Evento não contém dados completos do agendamento.");
+      return;
+    }
+
+    if (fullBookingData.type === "block") return;
+
     setSelectedBooking(fullBookingData);
     setIsModalOpen(true);
   };
 
-  const barberColorMap = useMemo(() => {
-    if (!bookings || bookings.length === 0) {
-      return new Map<string, string>();
-    }
-
-    // Primeiro, encontramos todos os IDs de barbeiros únicos na lista de agendamentos
-    const uniqueBarberIds = [...new Set(bookings.map((b) => b.barber?._id).filter(Boolean))];
-
-    const colorMap = new Map<string, string>();
-    uniqueBarberIds.forEach((barberId, index) => {
-      // Atribui uma cor da paleta baseado na posição do barbeiro na lista de únicos
-      const colorIndex = index % BARBER_COLORS.length;
-      colorMap.set(barberId, BARBER_COLORS[colorIndex]);
-    });
-
-    return colorMap;
-  }, [bookings]); // Este cálculo é refeito sempre que os agendamentos mudam
-
-  const filteredBookings = useMemo(() => {
-    if (selectedBarberId === "all") {
-      return bookings; // Se "Todos" estiver selecionado, retorna a lista completa
-    }
-    // Senão, filtra os agendamentos pelo ID do barbeiro selecionado
-    return bookings.filter((booking) => booking.barber?._id === selectedBarberId);
-  }, [bookings, selectedBarberId]);
-
   // 3. Formata os eventos para a agenda, agora usando o mapa de cores
   const agendaEvents = useMemo(() => {
-    return filteredBookings
+    const barberColorMap = new Map<string, string>();
+    allBarbers.forEach((barber, index) => {
+      const colorIndex = index % BARBER_COLORS.length;
+      barberColorMap.set(barber._id, BARBER_COLORS[colorIndex]);
+    });
+
+    const filteredBookings = bookings.filter((b) => selectedBarberId === "all" || b.barber?._id === selectedBarberId);
+    const bookingEvents = filteredBookings
       .map((booking) => {
         if (!booking.customer || !booking.service) return null;
         const startTime = parseISO(booking.time);
         const serviceDuration = booking.service?.duration || 60;
         const endTime = new Date(startTime.getTime() + serviceDuration * 60000);
-        const eventColor = barberColorMap.get(booking.barber?._id) || "#333333";
+        const eventColor = barberColorMap.get(booking.barber?._id) || "#333";
+
+        const now = new Date();
+        const isPast = endTime < now;
+
         return {
           _id: booking._id,
-          title: `${booking.customer?.name || ""} - ${booking.service?.name || ""}`,
+          title: `${booking.customer.name} - ${booking.service.name}`,
           start: startTime,
           end: endTime,
-          resource: { ...booking, color: eventColor },
+          resource: { ...booking, color: eventColor, type: "booking", isPast },
         };
       })
       .filter((event): event is NonNullable<typeof event> => event !== null);
-  }, [filteredBookings, barberColorMap]);
+
+    const filteredBlocks = timeBlocks.filter((b) => selectedBarberId === "all" || b.barber === selectedBarberId);
+    const blockEvents = filteredBlocks.map((block) => {
+      // Encontra o barbeiro correspondente para pegar o nome e a cor
+      const barber = allBarbers.find((b) => b._id === block.barber);
+      const eventColor = barber ? barberColorMap.get(barber._id) : "#888888";
+      const startTimeBlock = new Date(block.startTime);
+      const endTimeBlock = new Date(block.endTime);
+
+      const now = new Date();
+      const isPast = endTimeBlock < now;
+
+      return {
+        _id: block._id,
+        title: block.title,
+        start: startTimeBlock,
+        end: new Date(block.endTime),
+        // Adiciona o nome do barbeiro ao resource para ser usado no componente do evento
+        resource: { ...block, barberName: barber?.name, color: eventColor, type: "block", isPast },
+      };
+    });
+
+    return [...bookingEvents, ...blockEvents];
+  }, [bookings, timeBlocks, selectedBarberId, allBarbers]);
 
   const handleUpdateBookingStatus = async (bookingId: string, status: "completed" | "canceled") => {
     setIsUpdatingStatus(true);
@@ -230,6 +252,50 @@ export function AgendamentosPage() {
       toast.error("Falha ao atualizar o status do agendamento.");
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleCreateBlock = (slotInfo: { start: Date; end: Date }) => {
+    // 1. A biblioteca da agenda nos entrega o objeto 'slotInfo'.
+    //    Ele contém as datas de início e fim exatas que você selecionou na grade.
+    const { start, end } = slotInfo;
+
+    const initialBarberId = selectedBarberId !== "all" ? selectedBarberId : "";
+
+    // 2. Nós salvamos essas datas diretamente no nosso estado 'newBlockData'.
+    //    Aqui garantimos que startTime e endTime terão os valores corretos.
+    setNewBlockData({
+      startTime: start,
+      endTime: end,
+      title: "",
+      barberId: initialBarberId,
+    });
+
+    // 3. Abrimos o modal, que já estará pré-preenchido com esses horários.
+    setIsBlockModalOpen(true);
+  };
+
+  const handleSaveBlock = async () => {
+    if (!newBlockData.title || !newBlockData.barberId) {
+      toast.error("O motivo e o profissional são obrigatórios.");
+      return;
+    }
+    setIsCreatingBlock(true);
+    try {
+      const payload = {
+        title: newBlockData.title,
+        startTime: newBlockData.startTime?.toISOString(),
+        endTime: newBlockData.endTime?.toISOString(),
+        barberId: newBlockData.barberId,
+      };
+      await apiClient.post(`/api/barbershops/${barbershopId}/time-blocks`, payload);
+      toast.success("Horário bloqueado com sucesso!");
+      setIsBlockModalOpen(false);
+      fetchPageData();
+    } catch (error) {
+      toast.error("Ocorreu um erro ao salvar o bloqueio.");
+    } finally {
+      setIsCreatingBlock(false);
     }
   };
 
@@ -275,7 +341,6 @@ export function AgendamentosPage() {
 
   if (isLoading && bookings.length === 0 && allBarbers.length === 0)
     return <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>;
-  if (error && bookings.length === 0) return <p className="text-center p-10 text-red-500">{error}</p>;
 
   return (
     <Card>
@@ -290,9 +355,7 @@ export function AgendamentosPage() {
         </Link>
       </CardHeader>
       <CardContent>
-        {error && !isLoading && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
-
-        <div className="w-full sm:w-64">
+        <div className="w-full sm:w-64 mb-4">
           <Label className="text-sm font-medium">Filtrar por Profissional</Label>
           <Select value={selectedBarberId} onValueChange={setSelectedBarberId}>
             <SelectTrigger className="mt-1">
@@ -309,7 +372,63 @@ export function AgendamentosPage() {
           </Select>
         </div>
 
-        <AgendaView events={agendaEvents} onSelectEvent={handleSelectEvent} />
+        <AgendaView events={agendaEvents} onSelectEvent={handleSelectEvent} onSelectSlot={handleCreateBlock} />
+
+        <Dialog open={isBlockModalOpen} onOpenChange={setIsBlockModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Bloquear Horário na Agenda</DialogTitle>
+              <DialogDescription>
+                Defina um período e um motivo para o bloqueio. Nenhum agendamento poderá ser feito neste intervalo.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="blockTitle">Motivo do Bloqueio</Label>
+                <Input
+                  id="blockTitle"
+                  placeholder="Ex: Almoço, Consulta Médica"
+                  value={newBlockData.title}
+                  onChange={(e) => setNewBlockData({ ...newBlockData, title: e.target.value })}
+                />
+              </div>
+              {selectedBarberId === "all" && (
+                <div>
+                  <Label htmlFor="blockBarber">Profissional</Label>
+                  <Select value={newBlockData.barberId} onValueChange={(value) => setNewBlockData({ ...newBlockData, barberId: value })}>
+                    <SelectTrigger id="blockBarber">
+                      <SelectValue placeholder="Selecione um profissional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allBarbers.map((barber) => (
+                        <SelectItem key={barber._id} value={barber._id}>
+                          {barber.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="text-sm text-muted-foreground pt-2">
+                <p>
+                  <strong>Período:</strong>{" "}
+                  {newBlockData.startTime && newBlockData.endTime
+                    ? `${format(newBlockData.startTime, "HH:mm")} - ${format(newBlockData.endTime, "HH:mm")}`
+                    : ""}
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setIsBlockModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveBlock} disabled={isCreatingBlock}>
+                {isCreatingBlock && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Bloqueio
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent className="sm:max-w-[425px]">
