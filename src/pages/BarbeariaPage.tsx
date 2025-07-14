@@ -296,7 +296,7 @@ export function BarbeariaConfigPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="contact">Contato (Telefone/WhatsApp)</Label>
+              <Label htmlFor="contact">Contato (WhatsApp)</Label>
               <Input
                 id="contact"
                 name="contact"
@@ -339,7 +339,7 @@ export function BarbeariaConfigPage() {
               color={formData.themeColor || "#D10000"} // Usa a cor do formData ou um fallback
               onChange={handleThemeColorChange}
             />
-            <p className="text-xs text-muted-foreground">Esta cor será usada em botões e destaques na página da sua barbearia.</p>
+            <p className="text-xs text-muted-foreground">Esta cor será usada em botões e destaques na página de agendamento da sua barbearia.</p>
           </div>
 
           <CardHeader className="px-0!">
