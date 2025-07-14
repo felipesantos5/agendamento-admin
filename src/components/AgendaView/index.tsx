@@ -50,7 +50,13 @@ const CustomEvent = ({ event }: EventProps<AgendaEvent>) => {
 
 // --- Configurações da Biblioteca (localização e mensagens) ---
 const locales = { "pt-BR": ptBR };
-const localizer = dateFnsLocalizer({ format, parse, startOfWeek: () => startOfWeek(new Date(), { locale: ptBR }), getDay, locales });
+const localizer = dateFnsLocalizer({ 
+  format, 
+  parse, 
+  startOfWeek: () => startOfWeek(new Date(), { locale: ptBR }), 
+  getDay, 
+  locales 
+});
 const messages = {
   allDay: "Dia todo",
   previous: "Anterior",
@@ -132,6 +138,7 @@ export function AgendaView({ events, onSelectEvent, onSelectSlot }: AgendaViewPr
         components={{
           event: CustomEvent, // 3. Usa nosso componente personalizado para renderizar os eventos
         }}
+
         eventPropGetter={(event) => {
           // 1. Começamos com um objeto de estilo base
           const style: React.CSSProperties = {
