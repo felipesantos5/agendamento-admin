@@ -140,3 +140,20 @@
 .rbc-agenda-date-cell {
   background: white !important;
 }
+
+.rbc-btn-group {
+  display: flex !important;
+  margin-bottom: 8px !important;
+}
+
+.rbc-btn-group button:first-child {
+  order: 2 !important;
+}
+
+.rbc-btn-group button:nth-child(2) {
+  order: 1 !important;
+}
+
+.rbc-btn-group button:nth-child(3) {
+  order: 3 !important;
+}
