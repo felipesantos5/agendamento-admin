@@ -140,3 +140,35 @@
 .rbc-agenda-date-cell {
   background: white !important;
 }
+
+.rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(2) {
+  display: none;
+}
+
+.rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(3) {
+  border-radius: 4px 0 0 4px !important;
+}
+
+.rbc-btn-group:first-child {
+  margin-bottom: 8px;
+}
+
+.rbc-btn-group:last-child {
+  margin-top: 8px;
+}
+
+@media (min-width: 1026px) {
+  .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(2) {
+    display: inline-block;
+  }
+
+  .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(3) {
+    border-radius: 0 !important;
+  }
+
+  .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(1) {
+    border-radius: 4px 0 0 4px !important;
+  }
+}
+
+
