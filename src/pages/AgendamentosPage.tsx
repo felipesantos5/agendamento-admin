@@ -44,6 +44,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
 
 // Contexto do AdminLayout
 interface AdminOutletContext {
@@ -160,6 +161,8 @@ export function AgendamentosPage() {
   const [selectedBlock, setSelectedBlock] = useState<any>(null);
   const [isBlockDeleteModalOpen, setIsBlockDeleteModalOpen] = useState(false);
   const [isDeletingBlock, setIsDeletingBlock] = useState(false);
+
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     // Sempre que 'selectedBarberId' mudar, salva o novo valor no localStorage.
@@ -482,10 +485,20 @@ export function AgendamentosPage() {
           </Select>
         </div>
 
+        <Calendar
+          mode="single"
+          selected={currentDate}
+          onSelect={(date) => date && setCurrentDate(date)}
+          className="rounded-md border mt-1 p-0 w-full mb-2 md:hidden"
+          locale={ptBR}
+        />
+
         <AgendaView
           events={agendaEvents}
           onSelectEvent={handleSelectEvent}
           onSelectSlot={handleCreateBlock}
+          currentDate={currentDate}
+          onNavigate={setCurrentDate}
         />
 
         <Dialog open={isBlockModalOpen} onOpenChange={setIsBlockModalOpen}>

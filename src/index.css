@@ -146,15 +146,27 @@
 }
 
 .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(3) {
+  border-radius: 0 4px 4px 0 !important;
+}
+
+.rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(4) {
   border-radius: 4px 0 0 4px !important;
 }
 
+.rbc-agenda-date-cell {
+  color: #272727;
+}
+
 .rbc-btn-group:first-child {
-  margin-bottom: 8px;
+  display: none !important;
 }
 
 .rbc-btn-group:last-child {
-  margin-top: 8px;
+  margin-top: 12px;
+}
+
+.rbc-toolbar-label {
+  font-weight: 500;
 }
 
 @media (min-width: 1026px) {
@@ -163,11 +175,11 @@
   }
 
   .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(3) {
-    border-radius: 0 !important;
+    border-radius: 0 4px 4px 0 !important;
   }
 
   .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(1) {
-    border-radius: 4px 0 0 4px !important;
+    border-radius: 0 !important;
   }
 }
 
