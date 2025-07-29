@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { format, isPast, parseISO } from "date-fns";
+import { format, isPast, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import {
 import { Label } from "@/components/ui/label";
 import {
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Phone,
   PlusCircle,
@@ -44,7 +46,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
 
 // Contexto do AdminLayout
 interface AdminOutletContext {
@@ -448,6 +449,46 @@ export function AgendamentosPage() {
     }
   };
 
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const getDaysInMonth = (y: number, m: number) =>
+    new Date(y, m + 1, 0).getDate();
+  const getFirstDayOfMonth = (y: number, m: number) =>
+    new Date(y, m, 1).getDay();
+  const daysInMonth = getDaysInMonth(year, month);
+  const firstDayOfMonth = getFirstDayOfMonth(year, month);
+  const days = Array(firstDayOfMonth)
+    .fill(null)
+    .concat(Array.from({ length: daysInMonth }, (_, i) => i + 1));
+  const monthNames = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+
+  const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const handleDateSelect = (day: number) =>
+    setCurrentDate(new Date(year, month, day));
+
+  const isToday = (day: number) =>
+    isSameDay(new Date(), new Date(year, month, day));
+
+  const isDateInPast = (day: number) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Zera a hora para comparar apenas o dia
+    return new Date(year, month, day) < today;
+  };
+
   if (isLoading && bookings.length === 0 && allBarbers.length === 0)
     return (
       <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>
@@ -484,15 +525,80 @@ export function AgendamentosPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="max-h-[500px]">
-          <Calendar
-            mode="single"
-            selected={currentDate}
-            onSelect={(date) => date && setCurrentDate(date)}
-            className="rounded-md border mt-1 p-0 w-full mb-2 md:hidden"
-            locale={ptBR}
-          />
+
+        <div className="w-full rounded-lg border shadow-sm bg-background mt-4 mb-4 md:hidden">
+          <div className="flex items-center justify-between p-3 border-b">
+            <span className="text-lg font-semibold">
+              {monthNames[month]} {year}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePrevMonth}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleNextMonth}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-7 text-center text-xs font-medium text-muted-foreground p-2 border-t">
+            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
+              <div key={day}>{day}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {days.map((day, index) => {
+              // --- 1. LÓGICA DE ESTILO CENTRALIZADA AQUI ---
+              const isSelected = isSameDay(
+                currentDate,
+                new Date(year, month, day)
+              );
+              const isPast = isDateInPast(day);
+
+              return (
+                <div
+                  key={index}
+                  className={`p-1 flex items-center justify-center h-12 border-t ${
+                    index % 7 !== 0 ? "border-l" : ""
+                  }`}
+                >
+                  {day && (
+                    <button
+                      type="button"
+                      // O botão não é mais desabilitado
+                      onClick={() => handleDateSelect(day)}
+                      className={`
+                                flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition-colors
+                                ${/* --- 2. NOVA LÓGICA DE CLASSES --- */ ""}
+                                ${
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground ring-2 ring-ring ring-offset-2" // Prioridade 1: Dia selecionado
+                                    : isPast
+                                    ? "text-muted-foreground opacity-75 hover:bg-accent" // Prioridade 2: Dia passado
+                                    : isToday(day)
+                                    ? "bg-accent text-accent-foreground" // Prioridade 3: Dia de hoje
+                                    : "hover:bg-accent"
+                                }
+                              `}
+                    >
+                      {day}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
+        {/* </div> */}
         <AgendaView
           events={agendaEvents}
           onSelectEvent={handleSelectEvent}
