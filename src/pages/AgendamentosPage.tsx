@@ -484,15 +484,15 @@ export function AgendamentosPage() {
             </SelectContent>
           </Select>
         </div>
-
-        <Calendar
-          mode="single"
-          selected={currentDate}
-          onSelect={(date) => date && setCurrentDate(date)}
-          className="rounded-md border mt-1 p-0 w-full mb-2 md:hidden"
-          locale={ptBR}
-        />
-
+        <div className="max-h-[500px]">
+          <Calendar
+            mode="single"
+            selected={currentDate}
+            onSelect={(date) => date && setCurrentDate(date)}
+            className="rounded-md border mt-1 p-0 w-full mb-2 md:hidden"
+            locale={ptBR}
+          />
+        </div>
         <AgendaView
           events={agendaEvents}
           onSelectEvent={handleSelectEvent}
