@@ -181,8 +181,11 @@
   .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(1) {
     border-radius: 0 !important;
   }
-}
 
+  .rbc-btn-group:first-child {
+    display: block !important;
+  }
+}
 
 .rbc-btn-group {
   display: flex !important;
