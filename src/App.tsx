@@ -15,6 +15,7 @@ import { ResetPasswordPage } from "./pages/ResetPasswordPage.tsx";
 import { AbsencesPage } from "./pages/folga.tsx";
 import { NewBookingPage } from "./pages/NewBookingPage.tsx";
 import { PlansPage } from "./pages/PlansPage.tsx";
+import { CustomersPage } from "./pages/CustomersPage.tsx";
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
               />
               <Route path="folgas" element={<AbsencesPage />} />
               <Route path="planos" element={<PlansPage />} />
+              <Route path="clientes" element={<CustomersPage />} />
             </Route>
 
             <Route path="*" element={<>nao encontrado</>} />

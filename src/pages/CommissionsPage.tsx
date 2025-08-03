@@ -1,14 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DollarSign, Users, Scissors } from "lucide-react";
 import apiClient from "@/services/api";
 import { API_BASE_URL } from "@/config/BackendUrl";
 import { PriceFormater } from "@/helper/priceFormater";
+import {
+  addDays,
+  endOfWeek,
+  format,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface AdminOutletContext {
   barbershopId: string;
@@ -46,6 +76,32 @@ interface CommissionSummary {
   totalServices: number;
 }
 
+const getWeeksOfMonth = (year: number, month: number) => {
+  const weeks = [];
+  const firstDayOfMonth = startOfMonth(new Date(year, month - 1));
+  let currentWeekStart = startOfWeek(firstDayOfMonth, { locale: ptBR });
+
+  while (
+    currentWeekStart.getMonth() === month - 1 ||
+    startOfWeek(addDays(currentWeekStart, 6), { locale: ptBR }).getMonth() ===
+      month - 1
+  ) {
+    const weekEnd = endOfWeek(currentWeekStart, { locale: ptBR });
+    weeks.push({
+      label: `${format(currentWeekStart, "dd/MM")} - ${format(
+        weekEnd,
+        "dd/MM"
+      )}`,
+      value: `${format(currentWeekStart, "yyyy-MM-dd")}|${format(
+        weekEnd,
+        "yyyy-MM-dd"
+      )}`,
+    });
+    currentWeekStart = addDays(currentWeekStart, 7);
+  }
+  return weeks;
+};
+
 export default function CommissionsPage() {
   const { barbershopId } = useOutletContext<AdminOutletContext>();
   const [commissions, setCommissions] = useState<Commission[]>([]);
@@ -54,11 +110,20 @@ export default function CommissionsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // --- Estados para os filtros ---
-  const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString());
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    (new Date().getMonth() + 1).toString()
+  );
+  const [selectedYear, setSelectedYear] = useState<string>(
+    new Date().getFullYear().toString()
+  );
   // --- NOVO: Estado para a lista de barbeiros e para o barbeiro selecionado ---
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [selectedBarber, setSelectedBarber] = useState<string>("all"); // "all" para todos
+  const [selectedWeek, setSelectedWeek] = useState<string>("all");
+
+  const weeksOfMonth = useMemo(() => {
+    return getWeeksOfMonth(Number(selectedYear), Number(selectedMonth));
+  }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
     if (!barbershopId) return;
@@ -66,7 +131,9 @@ export default function CommissionsPage() {
     // --- NOVO: Função para buscar os barbeiros da barbearia ---
     const fetchBarbers = async () => {
       try {
-        const response = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/barbers`);
+        const response = await apiClient.get(
+          `${API_BASE_URL}/barbershops/${barbershopId}/barbers`
+        );
         setBarbers(response.data);
       } catch (err) {
         console.error("Falha ao buscar barbeiros:", err);
@@ -78,17 +145,34 @@ export default function CommissionsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        // Modificado: Adiciona o barberId aos parâmetros se um for selecionado
-        const params: { month: string; year: string; barberId?: string } = {
-          month: selectedMonth,
-          year: selectedYear,
-        };
+        // --- 4. LÓGICA DE PARÂMETROS ATUALIZADA ---
+        const params: {
+          month?: string;
+          year?: string;
+          barberId?: string;
+          startDate?: string;
+          endDate?: string;
+        } = {};
 
         if (selectedBarber !== "all") {
           params.barberId = selectedBarber;
         }
 
-        const response = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/commissions`, { params });
+        // Se uma semana for selecionada, ela tem prioridade sobre o filtro de mês
+        if (selectedWeek !== "all") {
+          const [startDate, endDate] = selectedWeek.split("|");
+          params.startDate = startDate;
+          params.endDate = endDate;
+        } else {
+          // Senão, usa o filtro de mês e ano padrão
+          params.month = selectedMonth;
+          params.year = selectedYear;
+        }
+
+        const response = await apiClient.get(
+          `/barbershops/${barbershopId}/commissions`,
+          { params }
+        );
         setCommissions(response.data.data);
       } catch (err: any) {
         setError(err.response?.data?.error || "Failed to fetch commissions.");
@@ -99,12 +183,17 @@ export default function CommissionsPage() {
 
     const fetchSummary = async () => {
       try {
-        const response = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/commissions/summary`, {
-          params: { year: selectedYear },
-        });
+        const response = await apiClient.get(
+          `${API_BASE_URL}/barbershops/${barbershopId}/commissions/summary`,
+          {
+            params: { year: selectedYear },
+          }
+        );
         setSummary(response.data.data);
       } catch (err: any) {
-        setError(err.response?.data?.error || "Failed to fetch commissions summary.");
+        setError(
+          err.response?.data?.error || "Failed to fetch commissions summary."
+        );
       }
     };
 
@@ -113,14 +202,36 @@ export default function CommissionsPage() {
     fetchBarbers(); // Chama a nova função ao carregar
 
     // Modificado: Adicionado `selectedBarber` ao array de dependências
-  }, [barbershopId, selectedMonth, selectedYear, selectedBarber]);
+  }, [barbershopId, selectedMonth, selectedYear, selectedBarber, selectedWeek]);
 
-  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const monthNames = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
 
   // Calcula os totais com base nos dados de comissão filtrados
-  const totalRevenueFiltered = commissions.reduce((acc, c) => acc + c.totalRevenue, 0);
-  const totalCommissionFiltered = commissions.reduce((acc, c) => acc + c.totalCommission, 0);
-  const totalServicesFiltered = commissions.reduce((acc, c) => acc + c.totalServices, 0);
+  const totalRevenueFiltered = commissions.reduce(
+    (acc, c) => acc + c.totalRevenue,
+    0
+  );
+  const totalCommissionFiltered = commissions.reduce(
+    (acc, c) => acc + c.totalCommission,
+    0
+  );
+  const totalServicesFiltered = commissions.reduce(
+    (acc, c) => acc + c.totalServices,
+    0
+  );
 
   return (
     <div className="space-y-6">
@@ -137,6 +248,20 @@ export default function CommissionsPage() {
               {barbers.map((barber) => (
                 <SelectItem key={barber._id} value={barber._id}>
                   {barber.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Mês Inteiro</SelectItem>
+              {weeksOfMonth.map((week: any) => (
+                <SelectItem key={week.value} value={week.value}>
+                  {week.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -160,7 +285,10 @@ export default function CommissionsPage() {
             </SelectTrigger>
             <SelectContent>
               {[...Array(5)].map((_, i) => (
-                <SelectItem key={i} value={(new Date().getFullYear() - i).toString()}>
+                <SelectItem
+                  key={i}
+                  value={(new Date().getFullYear() - i).toString()}
+                >
                   {new Date().getFullYear() - i}
                 </SelectItem>
               ))}
@@ -178,29 +306,41 @@ export default function CommissionsPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Receita no Período</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Receita no Período
+                </CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{PriceFormater(totalRevenueFiltered)}</div>
+                <div className="text-2xl font-bold">
+                  {PriceFormater(totalRevenueFiltered)}
+                </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Comissões no Período</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Comissões no Período
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{PriceFormater(totalCommissionFiltered)}</div>
+                <div className="text-2xl font-bold">
+                  {PriceFormater(totalCommissionFiltered)}
+                </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Serviços no Período</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Serviços no Período
+                </CardTitle>
                 <Scissors className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalServicesFiltered}</div>
+                <div className="text-2xl font-bold">
+                  {totalServicesFiltered}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -214,10 +354,17 @@ export default function CommissionsPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={summary}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="_id.month" tickFormatter={(tick) => monthNames[tick - 1]} />
+                    <XAxis
+                      dataKey="_id.month"
+                      tickFormatter={(tick) => monthNames[tick - 1]}
+                    />
                     <YAxis tickFormatter={(value: any) => value} />
                     <Tooltip formatter={(value: any) => PriceFormater(value)} />
-                    <Bar dataKey="totalCommissions" fill="#8884d8" name="Comissão" />
+                    <Bar
+                      dataKey="totalCommissions"
+                      fill="#8884d8"
+                      name="Comissão"
+                    />
                     <Bar dataKey="totalRevenue" fill="#82ca9d" name="Receita" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -234,8 +381,12 @@ export default function CommissionsPage() {
                   <TableRow>
                     <TableHead>Barbeiro</TableHead>
                     <TableHead className="text-center">Comissão</TableHead>
-                    <TableHead className="text-center">Total de Serviços</TableHead>
-                    <TableHead className="text-center">Receita Gerada</TableHead>
+                    <TableHead className="text-center">
+                      Total de Serviços
+                    </TableHead>
+                    <TableHead className="text-center">
+                      Receita Gerada
+                    </TableHead>
                     <TableHead className="text-right">Comissão</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -246,22 +397,39 @@ export default function CommissionsPage() {
                         <TableCell>
                           <div className="flex items-center">
                             <Avatar className="h-9 w-9 mr-4">
-                              <AvatarImage src={commission.barberImage} alt="Avatar" />
-                              <AvatarFallback>{commission.barberName.charAt(0)}</AvatarFallback>
+                              <AvatarImage
+                                src={commission.barberImage}
+                                alt="Avatar"
+                              />
+                              <AvatarFallback>
+                                {commission.barberName.charAt(0)}
+                              </AvatarFallback>
                             </Avatar>
-                            <span className="font-medium">{commission.barberName}</span>
+                            <span className="font-medium">
+                              {commission.barberName}
+                            </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">{commission.commissionRate}%</TableCell>
-                        <TableCell className="text-center">{commission.totalServices}</TableCell>
-                        <TableCell className="text-center">{PriceFormater(commission.totalRevenue)}</TableCell>
-                        <TableCell className="text-right font-semibold">{PriceFormater(commission.totalCommission)}</TableCell>
+                        <TableCell className="text-center">
+                          {commission.commissionRate}%
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {commission.totalServices}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {PriceFormater(commission.totalRevenue)}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {PriceFormater(commission.totalCommission)}
+                        </TableCell>
                       </TableRow>
                     );
                   })}
                 </TableBody>
                 <TableCaption>
-                  {commissions.length === 0 ? "Nenhuma comissão encontrada para este período." : "Detalhes das comissões para o período selecionado."}
+                  {commissions.length === 0
+                    ? "Nenhuma comissão encontrada para este período."
+                    : "Detalhes das comissões para o período selecionado."}
                 </TableCaption>
               </Table>
             </CardContent>

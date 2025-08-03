@@ -51,6 +51,7 @@ interface Plan {
   name: string;
   description?: string;
   price: number;
+  durationInDays: number; // Campo adicionado
 }
 
 interface AdminOutletContext {
@@ -61,6 +62,7 @@ const initialPlanState: Omit<Plan, "_id"> = {
   name: "",
   description: "",
   price: 0,
+  durationInDays: 30,
 };
 
 export function PlansPage() {
@@ -258,7 +260,7 @@ export function PlansPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="planName">Nome do Plano</Label>
               <Input
                 id="planName"
@@ -268,7 +270,7 @@ export function PlansPage() {
                 }
               />
             </div>
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="planDescription">Descrição (Opcional)</Label>
               <Textarea
                 id="planDescription"
@@ -281,19 +283,36 @@ export function PlansPage() {
                 }
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="planPrice">Preço (R$)</Label>
-              <Input
-                id="planPrice"
-                type="number"
-                value={currentPlan.price}
-                onChange={(e) =>
-                  setCurrentPlan({
-                    ...currentPlan,
-                    price: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="planPrice">Preço (R$)</Label>
+                <Input
+                  id="planPrice"
+                  type="number"
+                  value={currentPlan.price}
+                  onChange={(e) =>
+                    setCurrentPlan({
+                      ...currentPlan,
+                      price: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="planDuration">Duração (dias)</Label>
+                <Input
+                  id="planDuration"
+                  type="number"
+                  value={currentPlan.durationInDays}
+                  onChange={(e) =>
+                    setCurrentPlan({
+                      ...currentPlan,
+                      durationInDays: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="Ex: 30"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

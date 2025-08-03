@@ -14,6 +14,7 @@ import {
   Menu,
   CalendarOff,
   Package,
+  Users2,
 } from "lucide-react"; // Ícones de exemplo
 import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/services/api";
@@ -153,6 +154,12 @@ export function AdminLayout() {
       to: "planos",
       label: "Planos",
       icon: <Package className="mr-2 h-4 w-4" />,
+      roles: ["admin"],
+    },
+    {
+      to: "clientes",
+      label: "Clientes",
+      icon: <Users2 className="mr-2 h-4 w-4" />,
       roles: ["admin"],
     },
   ];
