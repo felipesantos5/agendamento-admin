@@ -263,10 +263,10 @@ export function AdminLayout() {
               variant="outline"
               size="icon"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="bg-white/80 backdrop-blur-sm shadow-md"
+              className="bg-zinc-900 backdrop-blur-sm shadow-md hover:bg-black/70"
               aria-label="Abrir menu"
             >
-              <Menu size={24} className="text-gray-700" />
+              <Menu size={24} className="text-white" />
             </Button>
           )}
         </div>
