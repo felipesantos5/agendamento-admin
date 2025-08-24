@@ -61,25 +61,6 @@ export function AbsencesPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [barberToBlock, setBarberToBlock] = useState<string>("all");
 
-  const fetchBlockedDays = async () => {
-    if (!barbershopId) return;
-    setIsLoading(true);
-    try {
-      const response = await apiClient.get(
-        `/api/barbershops/${barbershopId}/blocked-days`
-      );
-      const sortedDays = response.data.sort(
-        (a: BlockedDay, b: BlockedDay) =>
-          new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-      setBlockedDays(sortedDays);
-    } catch (error) {
-      toast.error("Erro ao carregar os dias bloqueados.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchPageData();
   }, [barbershopId]);
@@ -165,21 +146,6 @@ export function AbsencesPage() {
 
   const handleDateSelect = (day: number) => {
     setSelectedDate(new Date(year, month, day));
-  };
-
-  const getBlockedDayId = (date: Date): string | null => {
-    const dateString = format(date, "yyyy-MM-dd");
-    const day = blockedDays.find(
-      (d) =>
-        format(
-          new Date(
-            new Date(d.date).getTime() +
-              new Date(d.date).getTimezoneOffset() * 60000
-          ),
-          "yyyy-MM-dd"
-        ) === dateString
-    );
-    return day?._id || null;
   };
 
   const handleBlockDay = async (date: Date) => {
