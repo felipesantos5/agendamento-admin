@@ -260,7 +260,7 @@ export function PlansPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="planName">Nome do Plano</Label>
               <Input
                 id="planName"
@@ -270,7 +270,7 @@ export function PlansPage() {
                 }
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="planDescription">Descrição (Opcional)</Label>
               <Textarea
                 id="planDescription"
@@ -284,7 +284,7 @@ export function PlansPage() {
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="planPrice">Preço (R$)</Label>
                 <Input
                   id="planPrice"
@@ -298,7 +298,7 @@ export function PlansPage() {
                   }
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="planDuration">Duração (dias)</Label>
                 <Input
                   id="planDuration"
