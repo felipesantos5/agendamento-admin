@@ -16,6 +16,7 @@ import { AbsencesPage } from "./pages/folga.tsx";
 import { NewBookingPage } from "./pages/NewBookingPage.tsx";
 import { PlansPage } from "./pages/PlansPage.tsx";
 import { CustomersPage } from "./pages/CustomersPage.tsx";
+import { AgendamentosList } from "./pages/agendamentosList.tsx";
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
             <Route index element={<DefaultPageBasedOnRole />} />
 
             <Route path="agendamentos" element={<AgendamentosPage />} />
+            <Route path="agendamentos/lista" element={<AgendamentosList />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="metricas" element={<DashboardPage />} />
@@ -38,10 +40,7 @@ export default function App() {
               <Route path="servicos" element={<ServicesPage />} />
               <Route path="funcionarios" element={<BarberPage />} />
               <Route path="comissoes" element={<CommissionsPage />} />
-              <Route
-                path="agendamentos/novo-agendamento"
-                element={<NewBookingPage />}
-              />
+              <Route path="agendamentos/novo-agendamento" element={<NewBookingPage />} />
               <Route path="folgas" element={<AbsencesPage />} />
               <Route path="planos" element={<PlansPage />} />
               <Route path="clientes" element={<CustomersPage />} />
