@@ -157,6 +157,24 @@ export function AgendaView({
             opacity: 1,
           };
 
+          // Estilização específica para breaks
+          if (event.resource?.type === "break") {
+            return {
+              style: {
+                backgroundColor: "#fef3c7", // Fundo amarelo claro
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, #f59e0b, #f59e0b 2px, #fbbf24 2px, #fbbf24 8px)",
+                color: "#92400e", // Texto marrom escuro
+                border: "1px solid #f59e0b",
+                borderRadius: "4px",
+                opacity: event.resource?.isPast ? 0.6 : 0.9,
+                fontWeight: "500",
+                pointerEvents: "none",
+              },
+            };
+          }
+
+          // Estilização para outros tipos de bloqueio
           if (event.resource?.type === "block") {
             return {
               style: {
@@ -171,6 +189,7 @@ export function AgendaView({
             };
           }
 
+          // Lógica existente para agendamentos
           if (event.resource?.isPast) {
             style.backgroundColor = hexToRgba(
               (event.resource as any)?.color || "#333333",

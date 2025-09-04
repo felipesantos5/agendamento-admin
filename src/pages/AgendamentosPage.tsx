@@ -46,6 +46,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Barber } from "@/types/barberShop";
 
 // Contexto do AdminLayout
 interface AdminOutletContext {
@@ -73,12 +74,6 @@ interface Booking {
   };
   time: string;
   status: string;
-}
-
-// Tipo para os dados do barbeiro (para o filtro)
-interface Barber {
-  _id: string;
-  name: string;
 }
 
 interface PopulatedBooking {
@@ -234,6 +229,82 @@ export function AgendamentosPage() {
     setIsModalOpen(true);
   };
 
+  console.log(`AllBarbers`, allBarbers);
+
+  // Adicione esta função no seu componente AgendamentosPage
+  const generateBreakEvents = (date: Date) => {
+    const breakEvents: any[] = [];
+
+    // Para cada barbeiro que tem break habilitado
+    allBarbers.forEach((barber, index) => {
+      if (!barber.break?.enabled || !barber.break.days?.length) return;
+
+      // Verifica se o barbeiro está sendo filtrado
+      if (selectedBarberId !== "all" && selectedBarberId !== barber._id) return;
+
+      // Mapear dias da semana para números (0 = domingo, 1 = segunda, etc.)
+      const dayMapping = {
+        Domingo: 0,
+        "Segunda-feira": 1,
+        "Terça-feira": 2,
+        "Quarta-feira": 3,
+        "Quinta-feira": 4,
+        "Sexta-feira": 5,
+        Sábado: 6,
+      };
+
+      const breakDayNumbers = barber.break.days
+        .map((day) => dayMapping[day as keyof typeof dayMapping])
+        .filter((dayNum) => dayNum !== undefined);
+
+      // Gerar eventos para a semana atual (baseado na data atual da agenda)
+      const startOfWeek = new Date(date);
+      startOfWeek.setDate(date.getDate() - date.getDay());
+
+      for (let i = 0; i < 7; i++) {
+        const currentDay = new Date(startOfWeek);
+        currentDay.setDate(startOfWeek.getDate() + i);
+
+        const dayOfWeek = currentDay.getDay();
+
+        if (breakDayNumbers.includes(dayOfWeek)) {
+          const [startHour, startMinute] = barber.break.start
+            .split(":")
+            .map(Number);
+          const [endHour, endMinute] = barber.break.end.split(":").map(Number);
+
+          const breakStart = new Date(currentDay);
+          breakStart.setHours(startHour, startMinute, 0, 0);
+
+          const breakEnd = new Date(currentDay);
+          breakEnd.setHours(endHour, endMinute, 0, 0);
+
+          // Usar a mesma cor do barbeiro
+          const colorIndex = index % BARBER_COLORS.length;
+          const barberColor = BARBER_COLORS[colorIndex];
+
+          breakEvents.push({
+            _id: `break-${barber._id}-${
+              currentDay.toISOString().split("T")[0]
+            }`,
+            title: `Pausa - ${barber.name}`,
+            start: breakStart,
+            end: breakEnd,
+            resource: {
+              type: "break",
+              barberId: barber._id,
+              barberName: barber.name,
+              color: barberColor,
+              isPast: breakEnd < new Date(),
+            },
+          });
+        }
+      }
+    });
+
+    return breakEvents;
+  };
+
   // 3. Formata os eventos para a agenda, agora usando o mapa de cores
   const agendaEvents = useMemo(() => {
     const barberColorMap = new Map<string, string>();
@@ -245,6 +316,7 @@ export function AgendamentosPage() {
     const filteredBookings = bookings.filter(
       (b) => selectedBarberId === "all" || b.barber?._id === selectedBarberId
     );
+
     const bookingEvents = filteredBookings
       .map((booking) => {
         if (!booking.customer || !booking.service) return null;
@@ -269,8 +341,8 @@ export function AgendamentosPage() {
     const filteredBlocks = timeBlocks.filter(
       (b) => selectedBarberId === "all" || b.barber === selectedBarberId
     );
+
     const blockEvents = filteredBlocks.map((block) => {
-      // Encontra o barbeiro correspondente para pegar o nome e a cor
       const barber = allBarbers.find((b) => b._id === block.barber);
       const eventColor = barber ? barberColorMap.get(barber._id) : "#888888";
       const startTimeBlock = new Date(block.startTime);
@@ -284,7 +356,6 @@ export function AgendamentosPage() {
         title: block.title,
         start: startTimeBlock,
         end: new Date(block.endTime),
-        // Adiciona o nome do barbeiro ao resource para ser usado no componente do evento
         resource: {
           ...block,
           barberName: barber?.name,
@@ -295,8 +366,13 @@ export function AgendamentosPage() {
       };
     });
 
-    return [...bookingEvents, ...blockEvents];
-  }, [bookings, timeBlocks, selectedBarberId, allBarbers]);
+    // ✅ ADICIONAR OS BREAKS AQUI
+    const breakEvents = generateBreakEvents(currentDate);
+
+    console.log(`breakEvents`, breakEvents);
+
+    return [...bookingEvents, ...blockEvents, ...breakEvents];
+  }, [bookings, timeBlocks, selectedBarberId, allBarbers, currentDate]);
 
   const handleUpdateBookingStatus = async (
     bookingId: string,
@@ -489,6 +565,8 @@ export function AgendamentosPage() {
     return new Date(year, month, day) < today;
   };
 
+  console.log(`selectedBooking`, selectedBooking);
+
   if (isLoading && bookings.length === 0 && allBarbers.length === 0)
     return (
       <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>
@@ -598,7 +676,7 @@ export function AgendamentosPage() {
             })}
           </div>
         </div>
-        {/* </div> */}
+
         <AgendaView
           events={agendaEvents}
           onSelectEvent={handleSelectEvent}
