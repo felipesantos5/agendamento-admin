@@ -36,7 +36,14 @@ interface Barbershop {
   }[];
 }
 
-interface Barber {
+interface Break {
+  enabled: boolean;
+  start: string;
+  end: string;
+  days: string[];
+}
+
+export interface Barber {
   _id: string;
   name: string;
   barbershop: string;
@@ -45,6 +52,7 @@ interface Barber {
     start: string;
     end: string;
   }[];
+  break?: Break;
 }
 
 interface Service {
