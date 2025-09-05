@@ -190,7 +190,7 @@ export function AdminLayout() {
           <img src={barbershop.image} alt="" />
         </div>
       </div>
-      <nav className="flex flex-col space-y-1 mt-4 flex-grow px-3">
+      <nav className="flex flex-col space-y-1 mt-4 flex-grow px-3 overflow-x-auto">
         {visibleNavItems.map((item) => {
           const pathToCheck = `/${barbershopSlug}/${item.to}`;
           const isActive =
