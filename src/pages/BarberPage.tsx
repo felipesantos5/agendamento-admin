@@ -524,7 +524,7 @@ export function BarberPage() {
                       type="number"
                       min="0"
                       max="100"
-                      value={currentBarberForm.commission || ""} // Use o valor atual ou string vazia
+                      value={currentBarberForm.commission || ""}
                       onChange={handleFormInputChange}
                       placeholder="Ex: 40"
                       className="col-span-3"
@@ -540,8 +540,6 @@ export function BarberPage() {
                         (slot, index) => (
                           <div
                             key={index}
-                            // 1. O container principal agora tem um layout de 1 coluna no mobile
-                            // e muda para um layout mais complexo apenas em telas médias (md) ou maiores.
                             className="grid grid-cols-1 md:grid-cols-[1.5fr_2fr] md:items-end gap-4 p-3 border rounded-lg bg-secondary/50"
                           >
                             {/* Seção do Dia (coluna 1 no desktop) */}
@@ -576,7 +574,6 @@ export function BarberPage() {
 
                             {/* Seção dos Horários e Botão (coluna 2 no desktop) */}
                             <div>
-                              {/* 2. Este container flexível garante que os itens fiquem alinhados e com espaço */}
                               <div className="flex flex-col md:flex-row items-end gap-2 ">
                                 {/* Container do "Início" */}
                                 <div className="flex-grow w-full">
@@ -584,11 +581,12 @@ export function BarberPage() {
                                     htmlFor={`start-${index}`}
                                     className="text-xs text-muted-foreground"
                                   >
-                                    Início
+                                    Início (24h)
                                   </Label>
                                   <Input
                                     id={`start-${index}`}
                                     type="time"
+                                    step="3600" // Força intervalos de 1 hora
                                     value={slot.start}
                                     onChange={(e) =>
                                       handleAvailabilityChange(
@@ -597,7 +595,8 @@ export function BarberPage() {
                                         e.target.value
                                       )
                                     }
-                                    className="mt-1 w-full"
+                                    className="mt-1 w-full text-lg"
+                                    placeholder="08:00"
                                   />
                                 </div>
 
@@ -607,11 +606,12 @@ export function BarberPage() {
                                     htmlFor={`end-${index}`}
                                     className="text-xs text-muted-foreground"
                                   >
-                                    Fim
+                                    Fim (24h)
                                   </Label>
                                   <Input
                                     id={`end-${index}`}
                                     type="time"
+                                    step="3600" // Força intervalos de 1 hora
                                     value={slot.end}
                                     onChange={(e) =>
                                       handleAvailabilityChange(
@@ -620,7 +620,8 @@ export function BarberPage() {
                                         e.target.value
                                       )
                                     }
-                                    className="mt-1 w-full"
+                                    className="mt-1 w-full text-lg"
+                                    placeholder="18:00"
                                   />
                                 </div>
 
@@ -634,7 +635,7 @@ export function BarberPage() {
                                       removeAvailabilitySlot(index)
                                     }
                                     aria-label="Remover horário"
-                                    className="h-9 w-9" // Ajuste de tamanho para alinhar com os inputs
+                                    className="h-9 w-9"
                                   >
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
@@ -657,96 +658,188 @@ export function BarberPage() {
                     </Button>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="break-enabled"
-                        checked={currentBarberForm.break?.enabled || false}
-                        onChange={(e) =>
-                          handleBreakChange("enabled", e.target.checked)
-                        }
-                        className="rounded"
-                      />
-                      <Label htmlFor="break-enabled">
-                        Definir horário de pausa
+                  {/* ✅ SEÇÃO DE PAUSA MELHORADA */}
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium">
+                        Horário de Pausa
                       </Label>
-                    </div>
 
-                    {currentBarberForm.break?.enabled && (
-                      <div className="space-y-3 p-3 border rounded-lg bg-secondary/50">
-                        {/* Horários da pausa */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label
-                              htmlFor="break-start"
-                              className="text-xs text-muted-foreground"
-                            >
-                              Início da pausa
-                            </Label>
-                            <Input
-                              id="break-start"
-                              type="time"
-                              value={currentBarberForm.break?.start || "12:00"}
-                              onChange={(e) =>
-                                handleBreakChange("start", e.target.value)
-                              }
-                              className="mt-1"
-                            />
+                      {/* Toggle mais visível e intuitivo */}
+                      <div
+                        className={`
+                    flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all
+                    ${
+                      currentBarberForm.break?.enabled
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                    }
+                  `}
+                        onClick={() =>
+                          handleBreakChange(
+                            "enabled",
+                            !currentBarberForm.break?.enabled
+                          )
+                        }
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className={`
+                      w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
+                      ${
+                        currentBarberForm.break?.enabled
+                          ? "border-primary bg-primary"
+                          : "border-gray-300 bg-white"
+                      }
+                    `}
+                          >
+                            {currentBarberForm.break?.enabled && (
+                              <div className="w-3 h-3 bg-white rounded-full"></div>
+                            )}
                           </div>
                           <div>
-                            <Label
-                              htmlFor="break-end"
-                              className="text-xs text-muted-foreground"
-                            >
-                              Fim da pausa
-                            </Label>
-                            <Input
-                              id="break-end"
-                              type="time"
-                              value={currentBarberForm.break?.end || "13:00"}
-                              onChange={(e) =>
-                                handleBreakChange("end", e.target.value)
-                              }
-                              className="mt-1"
-                            />
+                            <p className="font-medium text-gray-900">
+                              {currentBarberForm.break?.enabled
+                                ? "Pausa Ativada"
+                                : "Ativar Horário de Pausa"}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {currentBarberForm.break?.enabled
+                                ? "Configure os horários e dias da pausa abaixo"
+                                : "Defina um intervalo para almoço ou descanso"}
+                            </p>
                           </div>
                         </div>
-
-                        {/* Dias da semana */}
-                        <div>
-                          <Label className="text-xs text-muted-foreground mb-2 block">
-                            Dias da semana para a pausa
-                          </Label>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {daysOfWeek.map((day) => (
-                              <div
-                                key={day}
-                                className="flex items-center space-x-2"
-                              >
-                                <input
-                                  type="checkbox"
-                                  id={`break-day-${day}`}
-                                  checked={
-                                    currentBarberForm.break?.days?.includes(
-                                      day
-                                    ) || false
-                                  }
-                                  onChange={() => handleBreakDayToggle(day)}
-                                  className="rounded"
-                                />
-                                <Label
-                                  htmlFor={`break-day-${day}`}
-                                  className="text-xs"
-                                >
-                                  {day}
-                                </Label>
-                              </div>
-                            ))}
-                          </div>
+                        <div
+                          className={`
+                    w-12 h-6 rounded-full transition-all relative
+                    ${
+                      currentBarberForm.break?.enabled
+                        ? "bg-primary"
+                        : "bg-gray-300"
+                    }
+                  `}
+                        >
+                          <div
+                            className={`
+                      w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all
+                      ${
+                        currentBarberForm.break?.enabled ? "left-6" : "left-0.5"
+                      }
+                    `}
+                          ></div>
                         </div>
                       </div>
-                    )}
+
+                      {/* Configurações da pausa - só aparece quando ativado */}
+                      {currentBarberForm.break?.enabled && (
+                        <div className="space-y-4 p-4 border rounded-lg bg-zinc-50/50 border-zinc-200">
+                          {/* Horários da pausa */}
+                          <div>
+                            <Label className="text-sm font-medium mb-3 block">
+                              ⏰ Horário da Pausa
+                            </Label>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label
+                                  htmlFor="break-start"
+                                  className="text-xs text-muted-foreground mb-1 block"
+                                >
+                                  Início da pausa (24h)
+                                </Label>
+                                <Input
+                                  id="break-start"
+                                  type="time"
+                                  step="1800" // Intervalos de 30 minutos
+                                  value={
+                                    currentBarberForm.break?.start || "12:00"
+                                  }
+                                  onChange={(e) =>
+                                    handleBreakChange("start", e.target.value)
+                                  }
+                                  className="text-lg font-mono"
+                                  placeholder="12:00"
+                                />
+                              </div>
+                              <div>
+                                <Label
+                                  htmlFor="break-end"
+                                  className="text-xs text-muted-foreground mb-1 block"
+                                >
+                                  Fim da pausa (24h)
+                                </Label>
+                                <Input
+                                  id="break-end"
+                                  type="time"
+                                  step="1800" // Intervalos de 30 minutos
+                                  value={
+                                    currentBarberForm.break?.end || "13:00"
+                                  }
+                                  onChange={(e) =>
+                                    handleBreakChange("end", e.target.value)
+                                  }
+                                  className="text-lg font-mono"
+                                  placeholder="13:00"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Dias da semana */}
+                          <div>
+                            <Label className="text-sm font-medium mb-3 block">
+                              📅 Dias da Semana
+                            </Label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {daysOfWeek.map((day) => (
+                                <div
+                                  key={day}
+                                  className={`
+                              flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all
+                              ${
+                                currentBarberForm.break?.days?.includes(day)
+                                  ? "border-primary bg-primary/10 shadow-sm"
+                                  : "border-gray-200 bg-white hover:bg-gray-50"
+                              }
+                            `}
+                                  onClick={() => handleBreakDayToggle(day)}
+                                >
+                                  <div
+                                    className={`
+                              w-5 h-5 rounded border-2 flex items-center justify-center
+                              ${
+                                currentBarberForm.break?.days?.includes(day)
+                                  ? "border-primary bg-primary"
+                                  : "border-gray-300 bg-white"
+                              }
+                            `}
+                                  >
+                                    {currentBarberForm.break?.days?.includes(
+                                      day
+                                    ) && (
+                                      <svg
+                                        className="w-3 h-3 text-white"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <Label className="font-medium cursor-pointer">
+                                    {day}
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

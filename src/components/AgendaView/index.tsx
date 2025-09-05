@@ -105,8 +105,6 @@ export function AgendaView({
     isMobile ? Views.DAY : Views.WEEK
   );
 
-  console.log("events", events);
-
   useEffect(() => {
     setCurrentView(isMobile ? Views.DAY : Views.WEEK);
   }, [isMobile]);

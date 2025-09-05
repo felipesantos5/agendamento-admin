@@ -229,8 +229,6 @@ export function AgendamentosPage() {
     setIsModalOpen(true);
   };
 
-  console.log(`AllBarbers`, allBarbers);
-
   // Adicione esta função no seu componente AgendamentosPage
   const generateBreakEvents = (date: Date) => {
     const breakEvents: any[] = [];
@@ -368,8 +366,6 @@ export function AgendamentosPage() {
 
     // ✅ ADICIONAR OS BREAKS AQUI
     const breakEvents = generateBreakEvents(currentDate);
-
-    console.log(`breakEvents`, breakEvents);
 
     return [...bookingEvents, ...blockEvents, ...breakEvents];
   }, [bookings, timeBlocks, selectedBarberId, allBarbers, currentDate]);
@@ -564,8 +560,6 @@ export function AgendamentosPage() {
     today.setHours(0, 0, 0, 0); // Zera a hora para comparar apenas o dia
     return new Date(year, month, day) < today;
   };
-
-  console.log(`selectedBooking`, selectedBooking);
 
   if (isLoading && bookings.length === 0 && allBarbers.length === 0)
     return (

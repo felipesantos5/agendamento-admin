@@ -80,7 +80,6 @@ export function AbsencesPage() {
             new Date(a.date).getTime() - new Date(b.date).getTime()
         )
       );
-      console.log("barbersRes.data", barbersRes.data);
       setAllBarbers(barbersRes.data);
     } catch (error) {
       toast.error("Erro ao carregar dados da página.");
