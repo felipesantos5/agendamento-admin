@@ -133,6 +133,7 @@ export function CustomersPage() {
   );
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [error, setError] = useState("");
 
   // Novos estados para modal de agendamentos
   const [isBookingsModalOpen, setIsBookingsModalOpen] = useState(false);
@@ -238,6 +239,7 @@ export function CustomersPage() {
       await fetchPageData();
     } catch (error: any) {
       console.error("Erro ao atribuir plano:", error);
+      setError(error.response?.data?.error || "Falha ao atribuir o plano.");
       toast.error(error.response?.data?.error || "Falha ao atribuir o plano.");
     } finally {
       setIsSubscribing(false);
@@ -740,6 +742,8 @@ export function CustomersPage() {
               </div>
             )}
           </div>
+
+          {error && <p className="text-red-500 text-sm block">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
