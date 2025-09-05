@@ -157,8 +157,38 @@
   color: #272727;
 }
 
-.rbc-btn-group:first-child {
+
+
+.rbc-toolbar {
+  position: relative;
+}
+
+.rbc-btn-group:first-child  {
   display: none !important;
+}
+
+@media (min-width: 400px) {
+  .rbc-btn-group:first-child  {
+    height: 5px;
+    display: flex !important;
+  }
+}
+
+.rbc-btn-group:first-child button:first-child {
+  display: none;
+}
+
+.rbc-btn-group:first-child button:last-child {
+  position: absolute;
+  bottom: 8px;
+  right: 0;
+}
+
+.rbc-btn-group:first-child button:nth-child(2) {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  border-radius: 8px 0 0 8px !important;
 }
 
 .rbc-btn-group:last-child {
@@ -174,6 +204,28 @@
     display: inline-block;
   }
 
+  .rbc-btn-group:first-child button:first-child {
+    display: inline-block;
+  }
+
+  .rbc-btn-group:first-child  {
+   height: auto;
+   margin: 0 !important;
+  }
+
+  .rbc-btn-group:first-child button:first-child {
+    border-radius: 0 !important;
+  }
+
+  .rbc-btn-group:first-child button:nth-child(2) {
+    position: static;
+    border-radius:  4px 0 0 4px  !important;
+  }
+
+  .rbc-btn-group:first-child button:last-child {
+    position: static;
+  }
+
   .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(3) {
     border-radius: 0 4px 4px 0 !important;
   }
@@ -183,7 +235,7 @@
   }
 
   .rbc-btn-group:first-child {
-    display: block !important;
+    display: flex !important;
   }
 }
 
