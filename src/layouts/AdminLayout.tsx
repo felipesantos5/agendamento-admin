@@ -2,7 +2,20 @@
 
 import React, { useEffect, useState } from "react";
 import { Outlet, Link, useParams, useLocation } from "react-router-dom";
-import { LayoutDashboard, Settings, Users, Scissors, CalendarDays, ShieldAlert, LogOut, X, Menu, CalendarOff, Package, Users2 } from "lucide-react"; // Ícones de exemplo
+import {
+  LayoutDashboard,
+  Settings,
+  Users,
+  Scissors,
+  CalendarDays,
+  ShieldAlert,
+  LogOut,
+  X,
+  Menu,
+  CalendarOff,
+  Package,
+  Users2,
+} from "lucide-react"; // Ícones de exemplo
 import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/services/api";
 import { Button } from "@/components/ui/button";
@@ -18,14 +31,17 @@ interface BarbershopContextData {
 
 // Contexto para compartilhar dados da barbearia com as páginas filhas (opcional, mas útil)
 // Você pode preferir passar props via Outlet context.
-export const BarbershopAdminContext = React.createContext<BarbershopContextData | null>(null);
+export const BarbershopAdminContext =
+  React.createContext<BarbershopContextData | null>(null);
 
 export function AdminLayout() {
   const { barbershopSlug } = useParams<{ barbershopSlug: string }>();
   const { user, logout } = useAuth();
   const location = useLocation(); // Para destacar o link ativo
 
-  const [barbershop, setBarbershop] = useState<BarbershopContextData | null>(null);
+  const [barbershop, setBarbershop] = useState<BarbershopContextData | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -41,7 +57,9 @@ export function AdminLayout() {
       setIsLoading(true);
       try {
         // Esta rota já existe no seu backend para buscar por slug
-        const response = await apiClient.get(`${API_BASE_URL}/barbershops/slug/${barbershopSlug}`);
+        const response = await apiClient.get(
+          `${API_BASE_URL}/barbershops/slug/${barbershopSlug}`
+        );
         if (response.data) {
           setBarbershop({
             _id: response.data._id,
@@ -65,7 +83,11 @@ export function AdminLayout() {
   }, [barbershopSlug]);
 
   if (isLoading) {
-    return <div className="flex justify-center items-center min-h-screen">Carregando painel da barbearia...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        Carregando painel da barbearia...
+      </div>
+    );
   }
 
   if (error || !barbershop) {
@@ -146,18 +168,23 @@ export function AdminLayout() {
       to: "clientes",
       label: "Clientes",
       icon: <Users2 className="mr-2 h-4 w-4" />,
-      roles: ["admin"],
+      roles: ["admin", "barber"],
     },
   ];
 
-  const visibleNavItems = navItems.filter((item) => user?.role && item.roles.includes(user.role));
+  const visibleNavItems = navItems.filter(
+    (item) => user?.role && item.roles.includes(user.role)
+  );
 
   const SidebarContent = () => (
     <>
       <div className="p-5">
         <h1 className="text-2xl font-bold text-white mb-1">Painel</h1>
         <div>
-          <h2 className="text-sm font-medium text-rose-400 truncate" title={barbershop!.name}>
+          <h2
+            className="text-sm font-medium text-rose-400 truncate"
+            title={barbershop!.name}
+          >
             {barbershop!.name}
           </h2>
           <img src={barbershop.image} alt="" />
@@ -166,7 +193,10 @@ export function AdminLayout() {
       <nav className="flex flex-col space-y-1 mt-4 flex-grow px-3">
         {visibleNavItems.map((item) => {
           const pathToCheck = `/${barbershopSlug}/${item.to}`;
-          const isActive = location.pathname === pathToCheck || (item.to === "dashboard" && location.pathname === `/${barbershopSlug}`);
+          const isActive =
+            location.pathname === pathToCheck ||
+            (item.to === "dashboard" &&
+              location.pathname === `/${barbershopSlug}`);
 
           return (
             <Link
@@ -209,15 +239,28 @@ export function AdminLayout() {
 
         {/* Sidebar para Mobile (Overlay) */}
         {isMobileSidebarOpen && (
-          <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setIsMobileSidebarOpen(false)} aria-hidden="true" />
+          <div
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            aria-hidden="true"
+          />
         )}
         <aside
           className={`fixed inset-y-0 left-0 z-40 w-64 bg-neutral-950 text-gray-200 flex flex-col
                    transform transition-transform duration-300 ease-in-out lg:hidden 
-                   ${isMobileSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}
+                   ${
+                     isMobileSidebarOpen
+                       ? "translate-x-0 shadow-2xl"
+                       : "-translate-x-full"
+                   }`}
         >
           <div className="flex justify-end p-2 absolute right-0">
-            <Button variant="ghost" size="icon" onClick={() => setIsMobileSidebarOpen(false)} className="text-gray-300">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="text-gray-300"
+            >
               <X size={24} />
             </Button>
           </div>
@@ -229,12 +272,17 @@ export function AdminLayout() {
           {!isMobileSidebarOpen && (
             <Button
               variant="outline"
-              size="icon"
+              size="default"
               onClick={() => setIsMobileSidebarOpen(true)}
               className="bg-zinc-900 backdrop-blur-sm shadow-md hover:bg-black/70"
               aria-label="Abrir menu"
             >
-              <Menu size={24} className="text-white" />
+              <Menu
+                size={24}
+                className="text-white fill-white"
+                color="white"
+                fill="white"
+              />
             </Button>
           )}
         </div>

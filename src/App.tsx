@@ -33,6 +33,12 @@ export default function App() {
 
             <Route path="agendamentos" element={<AgendamentosPage />} />
             <Route path="agendamentos/lista" element={<AgendamentosList />} />
+            <Route
+              path="agendamentos/novo-agendamento"
+              element={<NewBookingPage />}
+            />
+            <Route path="folgas" element={<AbsencesPage />} />
+            <Route path="clientes" element={<CustomersPage />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="metricas" element={<DashboardPage />} />
@@ -40,10 +46,7 @@ export default function App() {
               <Route path="servicos" element={<ServicesPage />} />
               <Route path="funcionarios" element={<BarberPage />} />
               <Route path="comissoes" element={<CommissionsPage />} />
-              <Route path="agendamentos/novo-agendamento" element={<NewBookingPage />} />
-              <Route path="folgas" element={<AbsencesPage />} />
               <Route path="planos" element={<PlansPage />} />
-              <Route path="clientes" element={<CustomersPage />} />
             </Route>
 
             <Route path="*" element={<>nao encontrado</>} />
