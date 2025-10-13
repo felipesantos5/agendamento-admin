@@ -15,6 +15,7 @@ export interface Booking {
     price: number;
     duration: number;
   };
+  paymentStatus?: string;
   time: string;
-  status: string;
+  status: "booked" | "confirmed" | "completed" | "canceled";
 }

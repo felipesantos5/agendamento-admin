@@ -47,6 +47,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Barber } from "@/types/barberShop";
+import {
+  getPaymentStatusInfo,
+  translatePaymentStatus,
+} from "@/helper/translatePaymentStatus";
 
 // Contexto do AdminLayout
 interface AdminOutletContext {
@@ -811,9 +815,22 @@ export function AgendamentosPage() {
                 </div>
                 {/* Rodapé com o Status e os Botões de Ação */}
                 <DialogFooter className="flex flex-col sm:flex-row sm:justify-between items-center gap-2">
-                  <Badge className={getStatusInfo(selectedBooking).className}>
-                    {getStatusInfo(selectedBooking).text}
-                  </Badge>
+                  <div className="flex gap-2 items-center">
+                    <Badge className={getStatusInfo(selectedBooking).className}>
+                      {getStatusInfo(selectedBooking).text}
+                    </Badge>
+
+                    <Badge
+                      className={
+                        getPaymentStatusInfo(selectedBooking).className
+                      }
+                    >
+                      {
+                        translatePaymentStatus(selectedBooking.paymentStatus)
+                          .text
+                      }
+                    </Badge>
+                  </div>
 
                   {/* Botões só aparecem se o agendamento estiver 'booked' ou 'confirmed' */}
                   {(selectedBooking.status === "booked" ||

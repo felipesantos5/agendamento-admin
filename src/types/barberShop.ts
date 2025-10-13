@@ -69,7 +69,7 @@ export interface PopulatedBooking {
   time: string; // Vem como string no formato ISO da API
   status: "booked" | "confirmed" | "completed" | "canceled";
   review?: string; // ID da avaliação, opcional
-
+  paymentStatus?: string;
   // Campos que foram populados e podem ser nulos se o item original foi deletado
   customer: {
     _id: string;
