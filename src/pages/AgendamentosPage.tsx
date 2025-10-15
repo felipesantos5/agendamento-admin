@@ -822,17 +822,18 @@ export function AgendamentosPage() {
                     <Badge className={getStatusInfo(selectedBooking).className}>
                       {getStatusInfo(selectedBooking).text}
                     </Badge>
-
-                    <Badge
-                      className={
-                        getPaymentStatusInfo(selectedBooking).className
-                      }
-                    >
-                      {
-                        translatePaymentStatus(selectedBooking.paymentStatus)
-                          .text
-                      }
-                    </Badge>
+                    {selectedBooking.paymentStatus && (
+                      <Badge
+                        className={
+                          getPaymentStatusInfo(selectedBooking).className
+                        }
+                      >
+                        {
+                          translatePaymentStatus(selectedBooking.paymentStatus)
+                            .text
+                        }
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="flex gap-2">

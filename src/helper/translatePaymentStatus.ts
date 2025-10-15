@@ -9,16 +9,22 @@ interface PaymentStatusInfo {
 }
 
 /**
- * Traduz o status de pagamento do Mercado Pago para um texto em português
- * e retorna uma sugestão de cor para a UI.
- * @param {string | null | undefined} status - O status recebido da API (ex: 'approved').
- * @returns {PaymentStatusInfo} - Um objeto com o texto traduzido e uma cor.
+ * Traduz o status de pagamento do Mercado Pago.
+ * Se não houver status, retorna um texto vazio.
+ * @param {string | null | undefined} status - O status recebido da API.
+ * @returns {PaymentStatusInfo} - Um objeto com o texto e uma cor.
  */
 export function translatePaymentStatus(
   status?: string | null
 ): PaymentStatusInfo {
-  // O 'toLowerCase()' garante que a função funcione mesmo se o status vier com letras maiúsculas
-  const lowerCaseStatus = status?.toLowerCase() || "presencial";
+  // ---- ALTERAÇÃO PRINCIPAL AQUI ----
+  // Se o status for nulo, indefinido ou vazio, retorna um objeto com texto vazio.
+  if (!status) {
+    return { text: "", color: "default" };
+  }
+  // ------------------------------------
+
+  const lowerCaseStatus = status.toLowerCase();
 
   const statusMap: Record<string, PaymentStatusInfo> = {
     // Status de Sucesso
@@ -35,13 +41,10 @@ export function translatePaymentStatus(
 
     // Status Pós-pagamento
     refunded: { text: "Devolvido", color: "info" },
-    charged_back: { text: "Contestado (Chargeback)", color: "danger" },
-
-    // Status para pagamentos não feitos online
-    presencial: { text: "Pagamento Presencial", color: "default" },
+    charged_back: { text: "Contestado", color: "danger" },
   };
 
-  // Retorna o objeto correspondente ou um padrão caso o status não seja encontrado
+  // Retorna o objeto correspondente ou um padrão para status desconhecidos
   return (
     statusMap[lowerCaseStatus] || {
       text: "Status Desconhecido",
