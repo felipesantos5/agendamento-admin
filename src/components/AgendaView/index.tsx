@@ -37,13 +37,15 @@ const CustomEvent = ({ event }: EventProps<AgendaEvent>) => {
       }
     >
       <div className={isCanceled ? "opacity-70" : ""}>
-        <strong className="font-bold block truncate">
-          {format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
-        </strong>
-        <div className="block truncate">{event.resource.customer?.name}</div>
-        <div className="block truncate opacity-80">
-          {event.resource.service?.name}
+        <div className="flex gap-4">
+          <strong className="font-bold block truncate">
+            {format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
+          </strong>
+          <p className="block truncate opacity-80">
+            {event.resource.service?.name}
+          </p>
         </div>
+        <p className="block truncate">{event.resource.customer?.name}</p>
       </div>
 
       {isCanceled && (
