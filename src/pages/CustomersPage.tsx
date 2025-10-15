@@ -1,61 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { toast } from "sonner";
 import apiClient from "@/services/api";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import {
-  Loader2,
-  MoreHorizontal,
-  User,
-  Filter,
-  Search,
-  CalendarDays,
-  Clock,
-  Scissors,
-  Calendar,
-} from "lucide-react";
+import { Loader2, MoreHorizontal, User, Filter, Search, CalendarDays, Clock, Scissors, Calendar } from "lucide-react";
 import { PhoneFormat } from "@/helper/phoneFormater";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { dateFormatter } from "@/helper/dateFormatter";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"; // Import pagination components
 
 // Tipagens
 interface Customer {
@@ -118,19 +79,14 @@ export function CustomersPage() {
 
   // Estados existentes
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "with-plan" | "without-plan"
-  >("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "with-plan" | "without-plan">("all");
 
   // Estados para modal de planos
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
-  );
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [error, setError] = useState("");
@@ -139,8 +95,11 @@ export function CustomersPage() {
   const [isBookingsModalOpen, setIsBookingsModalOpen] = useState(false);
   const [customerBookings, setCustomerBookings] = useState<Booking[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
-  const [selectedCustomerForBookings, setSelectedCustomerForBookings] =
-    useState<Customer | null>(null);
+  const [selectedCustomerForBookings, setSelectedCustomerForBookings] = useState<Customer | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   // Função existente para buscar dados da página
   const fetchPageData = async () => {
@@ -165,9 +124,7 @@ export function CustomersPage() {
   const fetchCustomerBookings = async (customerId: string) => {
     setIsLoadingBookings(true);
     try {
-      const response = await apiClient.get(
-        `/api/barbershops/${barbershopId}/admin/customers/${customerId}/bookings`
-      );
+      const response = await apiClient.get(`/api/barbershops/${barbershopId}/admin/customers/${customerId}/bookings`);
       setCustomerBookings(response.data);
     } catch (error: any) {
       console.error("Erro ao carregar agendamentos:", error);
@@ -186,28 +143,28 @@ export function CustomersPage() {
   };
 
   // Efeito para filtrar clientes (existente)
-  useEffect(() => {
+  const filteredCustomers = useMemo(() => {
     let filtered = customers;
 
     if (searchTerm) {
-      filtered = filtered.filter(
-        (customer) =>
-          customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          customer.phone.includes(searchTerm)
-      );
+      filtered = filtered.filter((customer) => customer.name.toLowerCase().includes(searchTerm.toLowerCase()) || customer.phone.includes(searchTerm));
     }
 
     if (filterStatus !== "all") {
       filtered = filtered.filter((customer) => {
-        const hasActivePlan = customer.subscriptions?.some(
-          (sub) => sub.status === "active"
-        );
+        const hasActivePlan = customer.subscriptions?.some((sub) => sub.status === "active");
         return filterStatus === "with-plan" ? hasActivePlan : !hasActivePlan;
       });
     }
-
-    setFilteredCustomers(filtered);
+    return filtered;
   }, [customers, searchTerm, filterStatus]);
+
+  const paginatedCustomers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredCustomers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredCustomers, currentPage]);
+
+  const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
 
   useEffect(() => {
     fetchPageData();
@@ -227,12 +184,9 @@ export function CustomersPage() {
     }
     setIsSubscribing(true);
     try {
-      await apiClient.post(
-        `/api/barbershops/${barbershopId}/admin/customers/${selectedCustomer._id}/subscribe`,
-        {
-          planId: selectedPlanId,
-        }
-      );
+      await apiClient.post(`/api/barbershops/${barbershopId}/admin/customers/${selectedCustomer._id}/subscribe`, {
+        planId: selectedPlanId,
+      });
 
       toast.success(`${selectedCustomer.name} agora tem um novo plano!`);
       setIsModalOpen(false);
@@ -318,9 +272,7 @@ export function CustomersPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Clientes</h1>
-          <p className="text-muted-foreground">
-            Gerencie seus clientes e visualize seu histórico de agendamentos
-          </p>
+          <p className="text-muted-foreground">Gerencie seus clientes e visualize seu histórico de agendamentos</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="text-sm">
@@ -339,7 +291,10 @@ export function CustomersPage() {
                 <Input
                   placeholder="Buscar por nome ou telefone..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="pl-10"
                 />
               </div>
@@ -347,7 +302,10 @@ export function CustomersPage() {
             <div className="sm:w-48">
               <Select
                 value={filterStatus}
-                onValueChange={(value: any) => setFilterStatus(value)}
+                onValueChange={(value: any) => {
+                  setFilterStatus(value);
+                  setCurrentPage(1);
+                }}
               >
                 <SelectTrigger>
                   <Filter className="h-4 w-4 mr-2" />
@@ -388,20 +346,13 @@ export function CustomersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCustomers.length > 0 ? (
-                  filteredCustomers.map((customer) => {
-                    const activeSubscription = customer.subscriptions?.find(
-                      (sub) => sub.status === "active"
-                    );
-                    const daysRemaining = activeSubscription
-                      ? getDaysRemaining(activeSubscription.endDate)
-                      : null;
+                {paginatedCustomers.length > 0 ? (
+                  paginatedCustomers.map((customer) => {
+                    const activeSubscription = customer.subscriptions?.find((sub) => sub.status === "active");
+                    const daysRemaining = activeSubscription ? getDaysRemaining(activeSubscription.endDate) : null;
 
                     return (
-                      <TableRow
-                        key={customer._id}
-                        className="hover:bg-muted/50"
-                      >
+                      <TableRow key={customer._id} className="hover:bg-muted/50">
                         <TableCell>
                           <div
                             className="flex items-center space-x-3 cursor-pointer hover:bg-muted/30 p-2 rounded-md transition-colors"
@@ -409,11 +360,7 @@ export function CustomersPage() {
                           >
                             <div className="flex-shrink-0">
                               {customer.imageUrl ? (
-                                <img
-                                  src={customer.imageUrl}
-                                  alt={customer.name}
-                                  className="h-10 w-10 rounded-full object-cover"
-                                />
+                                <img src={customer.imageUrl} alt={customer.name} className="h-10 w-10 rounded-full object-cover" />
                               ) : (
                                 <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                                   <User className="h-5 w-5 text-muted-foreground" />
@@ -422,9 +369,7 @@ export function CustomersPage() {
                             </div>
                             <div>
                               <div className="font-medium">{customer.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Cliente
-                              </div>
+                              <div className="text-sm text-muted-foreground">Cliente</div>
                             </div>
                           </div>
                         </TableCell>
@@ -446,26 +391,15 @@ export function CustomersPage() {
                         <TableCell>
                           {activeSubscription ? (
                             <div className="space-y-1 flex flex-col justify-center gap-1">
-                              <p className="font-medium text-zinc-800">
-                                {activeSubscription.plan.name}
-                              </p>
-                              <Badge
-                                variant={
-                                  daysRemaining && daysRemaining > 7
-                                    ? "default"
-                                    : "destructive"
-                                }
-                                className="text-xs"
-                              >
+                              <p className="font-medium text-zinc-800">{activeSubscription.plan.name}</p>
+                              <Badge variant={daysRemaining && daysRemaining > 7 ? "default" : "destructive"} className="text-xs">
                                 {daysRemaining && daysRemaining > 0
                                   ? `${daysRemaining} dias restantes`
                                   : daysRemaining === 0
                                   ? "Expira hoje"
                                   : "Expirado"}
                               </Badge>
-                              <div className="text-xs text-muted-foreground">
-                                Até {formatDate(activeSubscription.endDate)}
-                              </div>
+                              <div className="text-xs text-muted-foreground">Até {formatDate(activeSubscription.endDate)}</div>
                             </div>
                           ) : (
                             <Badge variant="outline">Sem plano</Badge>
@@ -506,31 +440,18 @@ export function CustomersPage() {
 
                         <TableCell className="text-right">
                           <DropdownMenu>
-                            <DropdownMenuTrigger
-                              asChild
-                              onClick={(e) => e.stopPropagation()}
-                            >
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                               <Button variant="ghost" className="h-8 w-8 p-0">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleOpenBookingsModal(customer)
-                                }
-                              >
+                              <DropdownMenuItem onClick={() => handleOpenBookingsModal(customer)}>
                                 {/* <History className="mr-2 h-4 w-4" /> */}
                                 Ver Agendamentos
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleOpenSubscribeModal(customer)
-                                }
-                              >
-                                {activeSubscription
-                                  ? "Alterar Plano"
-                                  : "Atribuir Plano"}
+                              <DropdownMenuItem onClick={() => handleOpenSubscribeModal(customer)}>
+                                {activeSubscription ? "Alterar Plano" : "Atribuir Plano"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -555,6 +476,40 @@ export function CustomersPage() {
               </TableBody>
             </Table>
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="pt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage((p) => Math.max(p - 1, 1));
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <span className="font-medium text-sm mx-4">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage((p) => Math.min(p + 1, totalPages));
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -566,9 +521,7 @@ export function CustomersPage() {
               {/* <History className="h-5 w-5" /> */}
               Histórico de Agendamentos - {selectedCustomerForBookings?.name}
             </DialogTitle>
-            <DialogDescription>
-              Visualize todos os agendamentos realizados por este cliente
-            </DialogDescription>
+            <DialogDescription>Visualize todos os agendamentos realizados por este cliente</DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">
@@ -586,9 +539,7 @@ export function CustomersPage() {
                         <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2">
                             <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
-                              {formatDateTime(booking.time)}
-                            </span>
+                            <span className="font-medium">{formatDateTime(booking.time)}</span>
                             {getStatusBadge(booking.status)}
                           </div>
 
@@ -597,16 +548,13 @@ export function CustomersPage() {
                             <span className="text-sm">
                               <strong>Serviço:</strong> {booking.service.name}
                             </span>
-                            <p className="text-xs">
-                              R$ {booking.service.price.toFixed(2)}
-                            </p>
+                            <p className="text-xs">R$ {booking.service.price.toFixed(2)}</p>
                           </div>
 
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">
-                              <strong>Profissional:</strong>{" "}
-                              {booking.barber.name}
+                              <strong>Profissional:</strong> {booking.barber.name}
                             </span>
                           </div>
 
@@ -614,8 +562,7 @@ export function CustomersPage() {
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm">
-                                <strong>Duração:</strong>{" "}
-                                {booking.service.duration} min
+                                <strong>Duração:</strong> {booking.service.duration} min
                               </span>
                             </div>
                           )}
@@ -627,11 +574,7 @@ export function CustomersPage() {
                           )}
                         </div>
 
-                        {booking.createdAt && (
-                          <div className="text-xs text-muted-foreground">
-                            Agendado em {dateFormatter(booking.createdAt)}
-                          </div>
-                        )}
+                        {booking.createdAt && <div className="text-xs text-muted-foreground">Agendado em {dateFormatter(booking.createdAt)}</div>}
                       </div>
                     </Card>
                   ))}
@@ -640,13 +583,8 @@ export function CustomersPage() {
             ) : (
               <div className="text-center py-8">
                 <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">
-                  Nenhum agendamento encontrado
-                </h3>
-                <p className="text-muted-foreground">
-                  Este cliente ainda não realizou nenhum agendamento nesta
-                  barbearia.
-                </p>
+                <h3 className="text-lg font-medium mb-2">Nenhum agendamento encontrado</h3>
+                <p className="text-muted-foreground">Este cliente ainda não realizou nenhum agendamento nesta barbearia.</p>
               </div>
             )}
           </div>
@@ -658,21 +596,13 @@ export function CustomersPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {selectedCustomer?.subscriptions?.some(
-                (sub) => sub.status === "active"
-              )
-                ? "Alterar Plano"
-                : "Atribuir Plano"}{" "}
-              para {selectedCustomer?.name}
+              {selectedCustomer?.subscriptions?.some((sub) => sub.status === "active") ? "Alterar Plano" : "Atribuir Plano"} para{" "}
+              {selectedCustomer?.name}
             </DialogTitle>
             <DialogDescription>
               Selecione um dos planos cadastrados para vincular a este cliente.
-              {selectedCustomer?.subscriptions?.some(
-                (sub) => sub.status === "active"
-              ) && (
-                <span className="block mt-2 text-amber-600">
-                  ⚠️ O plano atual será substituído pelo novo plano selecionado.
-                </span>
+              {selectedCustomer?.subscriptions?.some((sub) => sub.status === "active") && (
+                <span className="block mt-2 text-amber-600">⚠️ O plano atual será substituído pelo novo plano selecionado.</span>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -691,16 +621,13 @@ export function CustomersPage() {
                         <div className="flex gap-2">
                           <span className="font-medium">{plan.name}</span>
                           <span className="text-sm text-muted-foreground">
-                            R$ {plan.price.toFixed(2)} - {plan.durationInDays}{" "}
-                            dias
+                            R$ {plan.price.toFixed(2)} - {plan.durationInDays} dias
                           </span>
                         </div>
                       </SelectItem>
                     ))
                   ) : (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      Nenhum plano cadastrado.
-                    </div>
+                    <div className="p-4 text-center text-sm text-muted-foreground">Nenhum plano cadastrado.</div>
                   )}
                 </SelectContent>
               </Select>
@@ -709,9 +636,7 @@ export function CustomersPage() {
             {selectedPlanId && (
               <div className="p-3 bg-muted rounded-lg">
                 {(() => {
-                  const selectedPlan = plans.find(
-                    (p) => p._id === selectedPlanId
-                  );
+                  const selectedPlan = plans.find((p) => p._id === selectedPlanId);
                   if (!selectedPlan) return null;
 
                   return (
@@ -722,17 +647,14 @@ export function CustomersPage() {
                           📋 <strong>Nome:</strong> {selectedPlan.name}
                         </div>
                         <div>
-                          💰 <strong>Preço:</strong> R${" "}
-                          {selectedPlan.price.toFixed(2)}
+                          💰 <strong>Preço:</strong> R$ {selectedPlan.price.toFixed(2)}
                         </div>
                         <div>
-                          ⏰ <strong>Duração:</strong>{" "}
-                          {selectedPlan.durationInDays} dias
+                          ⏰ <strong>Duração:</strong> {selectedPlan.durationInDays} dias
                         </div>
                         {selectedPlan.description && (
                           <div>
-                            📝 <strong>Descrição:</strong>{" "}
-                            {selectedPlan.description}
+                            📝 <strong>Descrição:</strong> {selectedPlan.description}
                           </div>
                         )}
                       </div>
@@ -749,13 +671,8 @@ export function CustomersPage() {
             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
               Cancelar
             </Button>
-            <Button
-              onClick={handleSubscribeCustomer}
-              disabled={isSubscribing || !selectedPlanId}
-            >
-              {isSubscribing && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+            <Button onClick={handleSubscribeCustomer} disabled={isSubscribing || !selectedPlanId}>
+              {isSubscribing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirmar
             </Button>
           </div>

@@ -572,9 +572,31 @@ export function AgendamentosPage() {
 
   return (
     <Card>
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle>Agendamentos</CardTitle>
-
+      <CardHeader className="flex justify-between">
+        <div className="flex gap-4 items-center flex-wrap">
+          <CardTitle>Agendamentos</CardTitle>
+          <div className="flex-wrap flex gap-2 items-center">
+            <Label className="text-sm font-medium">
+              Filtrar por Profissional
+            </Label>
+            <Select
+              value={selectedBarberId}
+              onValueChange={setSelectedBarberId}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Ver todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Profissionais</SelectItem>
+                {allBarbers.map((barber) => (
+                  <SelectItem key={barber._id} value={barber._id}>
+                    {barber.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <Link to="novo-agendamento">
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -583,25 +605,6 @@ export function AgendamentosPage() {
         </Link>
       </CardHeader>
       <CardContent>
-        <div className="w-full sm:w-64 mb-4">
-          <Label className="text-sm font-medium">
-            Filtrar por Profissional
-          </Label>
-          <Select value={selectedBarberId} onValueChange={setSelectedBarberId}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Ver todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Profissionais</SelectItem>
-              {allBarbers.map((barber) => (
-                <SelectItem key={barber._id} value={barber._id}>
-                  {barber.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         <div className="w-full rounded-lg border shadow-sm bg-background mt-4 mb-4 md:hidden">
           <div className="flex items-center justify-between p-3 border-b">
             <span className="text-lg font-semibold">
@@ -819,23 +822,22 @@ export function AgendamentosPage() {
                     <Badge className={getStatusInfo(selectedBooking).className}>
                       {getStatusInfo(selectedBooking).text}
                     </Badge>
-
-                    <Badge
-                      className={
-                        getPaymentStatusInfo(selectedBooking).className
-                      }
-                    >
-                      {
-                        translatePaymentStatus(selectedBooking.paymentStatus)
-                          .text
-                      }
-                    </Badge>
+                    {selectedBooking.paymentStatus && (
+                      <Badge
+                        className={
+                          getPaymentStatusInfo(selectedBooking).className
+                        }
+                      >
+                        {
+                          translatePaymentStatus(selectedBooking.paymentStatus)
+                            .text
+                        }
+                      </Badge>
+                    )}
                   </div>
 
-                  {/* Botões só aparecem se o agendamento estiver 'booked' ou 'confirmed' */}
-                  {(selectedBooking.status === "booked" ||
-                    selectedBooking.status === "confirmed") && (
-                    <div className="flex gap-2">
+                  <div className="flex gap-2">
+                    {selectedBooking.status !== "canceled" && (
                       <Button
                         variant="destructive"
                         onClick={() =>
@@ -853,6 +855,8 @@ export function AgendamentosPage() {
                         )}
                         Cancelar
                       </Button>
+                    )}
+                    {selectedBooking.status !== "completed" && (
                       <Button
                         className="bg-green-600 hover:bg-green-700"
                         onClick={() =>
@@ -870,8 +874,8 @@ export function AgendamentosPage() {
                         )}
                         Concluir
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </DialogFooter>
               </>
             )}

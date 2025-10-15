@@ -37,15 +37,13 @@ const CustomEvent = ({ event }: EventProps<AgendaEvent>) => {
       }
     >
       <div className={isCanceled ? "opacity-70" : ""}>
-        <div className="flex gap-4">
-          <strong className="font-bold block truncate">
-            {format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
-          </strong>
-          <p className="block truncate opacity-80">
-            {event.resource.service?.name}
-          </p>
+        <strong className="font-bold block truncate">
+          {format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
+        </strong>
+        <div className="block truncate">{event.resource.customer?.name}</div>
+        <div className="block truncate opacity-80">
+          {event.resource.service?.name}
         </div>
-        <p className="block truncate">{event.resource.customer?.name}</p>
       </div>
 
       {isCanceled && (
@@ -126,7 +124,7 @@ export function AgendaView({
   };
 
   return (
-    <div className="h-[75vh] bg-white p-2 md:p-4 rounded-lg shadow">
+    <div className="h-[80vh] bg-white p-2 md:p-4 rounded-lg shadow">
       <Calendar
         localizer={localizer}
         events={events}
