@@ -4,9 +4,25 @@ import { format, isPast, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, ChevronLeft, ChevronRight, Loader2, Phone, PlusCircle, Scissors, User, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Phone,
+  PlusCircle,
+  Scissors,
+  User,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -21,10 +37,20 @@ import {
 import apiClient from "@/services/api";
 import { toast } from "sonner";
 import { AgendaView } from "@/components/AgendaView";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Barber } from "@/types/barberShop";
-import { getPaymentStatusInfo, translatePaymentStatus } from "@/helper/translatePaymentStatus";
+import {
+  getPaymentStatusInfo,
+  translatePaymentStatus,
+} from "@/helper/translatePaymentStatus";
 
 // Contexto do AdminLayout
 interface AdminOutletContext {
@@ -94,7 +120,18 @@ interface TimeBlock {
   barber: string; // ID do barbeiro
 }
 
-const BARBER_COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#000000", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+const BARBER_COLORS = [
+  "#1f77b4",
+  "#ff7f0e",
+  "#2ca02c",
+  "#000000",
+  "#9467bd",
+  "#8c564b",
+  "#e377c2",
+  "#7f7f7f",
+  "#bcbd22",
+  "#17becf",
+];
 
 export function AgendamentosPage() {
   const { barbershopId } = useOutletContext<AdminOutletContext>();
@@ -146,7 +183,9 @@ export function AgendamentosPage() {
       setTimeBlocks(timeBlocksRes.data);
     } catch (err: any) {
       console.error("Erro ao buscar dados da página:", err);
-      toast.error(err.response?.data?.error || "Não foi possível carregar os dados.");
+      toast.error(
+        err.response?.data?.error || "Não foi possível carregar os dados."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -161,7 +200,9 @@ export function AgendamentosPage() {
   const handleDeleteBooking = async (bookingId: string) => {
     try {
       setIsDeleting(true);
-      await apiClient.delete(`/barbershops/${barbershopId}/bookings/${bookingId}`);
+      await apiClient.delete(
+        `/barbershops/${barbershopId}/bookings/${bookingId}`
+      );
       setBookings(bookings.filter((booking) => booking._id !== bookingId));
       toast.success("Agendamento excluído com sucesso!");
     } catch (error: any) {
@@ -214,7 +255,9 @@ export function AgendamentosPage() {
         Sábado: 6,
       };
 
-      const breakDayNumbers = barber.break.days.map((day) => dayMapping[day as keyof typeof dayMapping]).filter((dayNum) => dayNum !== undefined);
+      const breakDayNumbers = barber.break.days
+        .map((day) => dayMapping[day as keyof typeof dayMapping])
+        .filter((dayNum) => dayNum !== undefined);
 
       // Gerar eventos para a semana atual (baseado na data atual da agenda)
       const startOfWeek = new Date(date);
@@ -227,7 +270,9 @@ export function AgendamentosPage() {
         const dayOfWeek = currentDay.getDay();
 
         if (breakDayNumbers.includes(dayOfWeek)) {
-          const [startHour, startMinute] = barber.break.start.split(":").map(Number);
+          const [startHour, startMinute] = barber.break.start
+            .split(":")
+            .map(Number);
           const [endHour, endMinute] = barber.break.end.split(":").map(Number);
 
           const breakStart = new Date(currentDay);
@@ -241,7 +286,9 @@ export function AgendamentosPage() {
           const barberColor = BARBER_COLORS[colorIndex];
 
           breakEvents.push({
-            _id: `break-${barber._id}-${currentDay.toISOString().split("T")[0]}`,
+            _id: `break-${barber._id}-${
+              currentDay.toISOString().split("T")[0]
+            }`,
             title: `Pausa - ${barber.name}`,
             start: breakStart,
             end: breakEnd,
@@ -268,7 +315,9 @@ export function AgendamentosPage() {
       barberColorMap.set(barber._id, BARBER_COLORS[colorIndex]);
     });
 
-    const filteredBookings = bookings.filter((b) => selectedBarberId === "all" || b.barber?._id === selectedBarberId);
+    const filteredBookings = bookings.filter(
+      (b) => selectedBarberId === "all" || b.barber?._id === selectedBarberId
+    );
 
     const bookingEvents = filteredBookings
       .map((booking) => {
@@ -291,7 +340,9 @@ export function AgendamentosPage() {
       })
       .filter((event): event is NonNullable<typeof event> => event !== null);
 
-    const filteredBlocks = timeBlocks.filter((b) => selectedBarberId === "all" || b.barber === selectedBarberId);
+    const filteredBlocks = timeBlocks.filter(
+      (b) => selectedBarberId === "all" || b.barber === selectedBarberId
+    );
 
     const blockEvents = filteredBlocks.map((block) => {
       const barber = allBarbers.find((b) => b._id === block.barber);
@@ -323,16 +374,28 @@ export function AgendamentosPage() {
     return [...bookingEvents, ...blockEvents, ...breakEvents];
   }, [bookings, timeBlocks, selectedBarberId, allBarbers, currentDate]);
 
-  const handleUpdateBookingStatus = async (bookingId: string, status: "completed" | "canceled") => {
+  const handleUpdateBookingStatus = async (
+    bookingId: string,
+    status: "completed" | "canceled"
+  ) => {
     setIsUpdatingStatus(true);
     const originalBookings = [...bookings];
 
     // Atualização otimista da UI
-    setBookings((prev) => prev.map((b) => (b._id === bookingId ? { ...b, status } : b)));
+    setBookings((prev) =>
+      prev.map((b) => (b._id === bookingId ? { ...b, status } : b))
+    );
 
     try {
-      await apiClient.put(`/barbershops/${barbershopId}/bookings/${bookingId}/status`, { status });
-      toast.success(`Agendamento atualizado para "${status === "completed" ? "Concluído" : "Cancelado"}"!`);
+      await apiClient.put(
+        `/barbershops/${barbershopId}/bookings/${bookingId}/status`,
+        { status }
+      );
+      toast.success(
+        `Agendamento atualizado para "${
+          status === "completed" ? "Concluído" : "Cancelado"
+        }"!`
+      );
       setIsModalOpen(false); // Fecha o modal após a ação
     } catch (error) {
       setBookings(originalBookings); // Reverte em caso de erro
@@ -391,7 +454,10 @@ export function AgendamentosPage() {
         endTime: endTime.toISOString(),
         barberId: newBlockData.barberId,
       };
-      await apiClient.post(`/api/barbershops/${barbershopId}/time-blocks`, payload);
+      await apiClient.post(
+        `/api/barbershops/${barbershopId}/time-blocks`,
+        payload
+      );
       toast.success("Horário bloqueado com sucesso!");
       setIsBlockModalOpen(false);
       fetchPageData();
@@ -405,7 +471,9 @@ export function AgendamentosPage() {
   const handleDeleteBlock = async (blockId: string) => {
     setIsDeletingBlock(true);
     try {
-      await apiClient.delete(`/api/barbershops/${barbershopId}/time-blocks/${blockId}`);
+      await apiClient.delete(
+        `/api/barbershops/${barbershopId}/time-blocks/${blockId}`
+      );
       toast.success("Bloqueio removido com sucesso!");
       setIsBlockDeleteModalOpen(false);
       setSelectedBlock(null);
@@ -459,20 +527,37 @@ export function AgendamentosPage() {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const getDaysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
-  const getFirstDayOfMonth = (y: number, m: number) => new Date(y, m, 1).getDay();
+  const getDaysInMonth = (y: number, m: number) =>
+    new Date(y, m + 1, 0).getDate();
+  const getFirstDayOfMonth = (y: number, m: number) =>
+    new Date(y, m, 1).getDay();
   const daysInMonth = getDaysInMonth(year, month);
   const firstDayOfMonth = getFirstDayOfMonth(year, month);
   const days = Array(firstDayOfMonth)
     .fill(null)
     .concat(Array.from({ length: daysInMonth }, (_, i) => i + 1));
-  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const monthNames = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
 
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-  const handleDateSelect = (day: number) => setCurrentDate(new Date(year, month, day));
+  const handleDateSelect = (day: number) =>
+    setCurrentDate(new Date(year, month, day));
 
-  const isToday = (day: number) => isSameDay(new Date(), new Date(year, month, day));
+  const isToday = (day: number) =>
+    isSameDay(new Date(), new Date(year, month, day));
 
   const isDateInPast = (day: number) => {
     const today = new Date();
@@ -481,7 +566,9 @@ export function AgendamentosPage() {
   };
 
   if (isLoading && bookings.length === 0 && allBarbers.length === 0)
-    return <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>;
+    return (
+      <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>
+    );
 
   return (
     <Card>
@@ -489,8 +576,13 @@ export function AgendamentosPage() {
         <div className="flex gap-4 items-center flex-wrap">
           <CardTitle>Agendamentos</CardTitle>
           <div className="flex-wrap flex gap-2 items-center">
-            <Label className="text-sm font-medium">Filtrar por Profissional</Label>
-            <Select value={selectedBarberId} onValueChange={setSelectedBarberId}>
+            <Label className="text-sm font-medium">
+              Filtrar por Profissional
+            </Label>
+            <Select
+              value={selectedBarberId}
+              onValueChange={setSelectedBarberId}
+            >
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Ver todos" />
               </SelectTrigger>
@@ -519,10 +611,20 @@ export function AgendamentosPage() {
               {monthNames[month]} {year}
             </span>
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" onClick={handlePrevMonth} className="h-8 w-8">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePrevMonth}
+                className="h-8 w-8"
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={handleNextMonth} className="h-8 w-8">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleNextMonth}
+                className="h-8 w-8"
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -535,11 +637,19 @@ export function AgendamentosPage() {
           <div className="grid grid-cols-7">
             {days.map((day, index) => {
               // --- 1. LÓGICA DE ESTILO CENTRALIZADA AQUI ---
-              const isSelected = isSameDay(currentDate, new Date(year, month, day));
+              const isSelected = isSameDay(
+                currentDate,
+                new Date(year, month, day)
+              );
               const isPast = isDateInPast(day);
 
               return (
-                <div key={index} className={`p-1 flex items-center justify-center h-12 border-t ${index % 7 !== 0 ? "border-l" : ""}`}>
+                <div
+                  key={index}
+                  className={`p-1 flex items-center justify-center h-12 border-t ${
+                    index % 7 !== 0 ? "border-l" : ""
+                  }`}
+                >
                   {day && (
                     <button
                       type="button"
@@ -581,7 +691,8 @@ export function AgendamentosPage() {
             <DialogHeader>
               <DialogTitle>Bloquear Horário na Agenda</DialogTitle>
               <DialogDescription>
-                Defina um período e um motivo para o bloqueio. Nenhum agendamento poderá ser feito neste intervalo.
+                Defina um período e um motivo para o bloqueio. Nenhum
+                agendamento poderá ser feito neste intervalo.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -591,13 +702,20 @@ export function AgendamentosPage() {
                   id="blockTitle"
                   placeholder="Ex: Almoço, Consulta Médica"
                   value={newBlockData.title}
-                  onChange={(e) => setNewBlockData({ ...newBlockData, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewBlockData({ ...newBlockData, title: e.target.value })
+                  }
                 />
               </div>
               {selectedBarberId === "all" && (
                 <div className="space-y-2">
                   <Label htmlFor="blockBarber">Profissional</Label>
-                  <Select value={newBlockData.barberId} onValueChange={(value) => setNewBlockData({ ...newBlockData, barberId: value })}>
+                  <Select
+                    value={newBlockData.barberId}
+                    onValueChange={(value) =>
+                      setNewBlockData({ ...newBlockData, barberId: value })
+                    }
+                  >
                     <SelectTrigger id="blockBarber">
                       <SelectValue placeholder="Selecione um profissional" />
                     </SelectTrigger>
@@ -615,17 +733,25 @@ export function AgendamentosPage() {
                 <p>
                   <strong>Período:</strong>{" "}
                   {newBlockData.startTime && newBlockData.endTime
-                    ? `${format(newBlockData.startTime, "HH:mm")} - ${format(newBlockData.endTime, "HH:mm")}`
+                    ? `${format(newBlockData.startTime, "HH:mm")} - ${format(
+                        newBlockData.endTime,
+                        "HH:mm"
+                      )}`
                     : ""}
                 </p>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsBlockModalOpen(false)}>
+              <Button
+                variant="ghost"
+                onClick={() => setIsBlockModalOpen(false)}
+              >
                 Cancelar
               </Button>
               <Button onClick={handleSaveBlock} disabled={isCreatingBlock}>
-                {isCreatingBlock && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isCreatingBlock && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Salvar Bloqueio
               </Button>
             </DialogFooter>
@@ -638,20 +764,33 @@ export function AgendamentosPage() {
               <>
                 <DialogHeader>
                   <DialogTitle>Detalhes do Agendamento</DialogTitle>
-                  <DialogDescription>{format(new Date(selectedBooking.time), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</DialogDescription>
+                  <DialogDescription>
+                    {format(
+                      new Date(selectedBooking.time),
+                      "EEEE, dd/MM/yyyy 'às' HH:mm",
+                      { locale: ptBR }
+                    )}
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Cliente</p> <p className="font-semibold">{selectedBooking.customer?.name}</p>
+                      <p className="text-sm text-muted-foreground">Cliente</p>{" "}
+                      <p className="font-semibold">
+                        {selectedBooking.customer?.name}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Telefone</p>
-                      <a href={`https://wa.me/55${selectedBooking.customer?.phone}`} target="_blank" className="font-semibold underline">
+                      <a
+                        href={`https://wa.me/55${selectedBooking.customer?.phone}`}
+                        target="_blank"
+                        className="font-semibold underline"
+                      >
                         {selectedBooking.customer?.phone}
                       </a>
                     </div>
@@ -659,43 +798,82 @@ export function AgendamentosPage() {
                   <div className="flex items-center gap-3">
                     <Scissors className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Serviço</p> <p className="font-semibold">{selectedBooking.service?.name}</p>
+                      <p className="text-sm text-muted-foreground">Serviço</p>{" "}
+                      <p className="font-semibold">
+                        {selectedBooking.service?.name}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Profissional</p> <p className="font-semibold">{selectedBooking.barber?.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Profissional
+                      </p>{" "}
+                      <p className="font-semibold">
+                        {selectedBooking.barber?.name}
+                      </p>
                     </div>
                   </div>
                 </div>
                 {/* Rodapé com o Status e os Botões de Ação */}
                 <DialogFooter className="flex flex-col sm:flex-row sm:justify-between items-center gap-2">
                   <div className="flex gap-2 items-center">
-                    <Badge className={getStatusInfo(selectedBooking).className}>{getStatusInfo(selectedBooking).text}</Badge>
+                    <Badge className={getStatusInfo(selectedBooking).className}>
+                      {getStatusInfo(selectedBooking).text}
+                    </Badge>
 
-                    <Badge className={getPaymentStatusInfo(selectedBooking).className}>
-                      {translatePaymentStatus(selectedBooking.paymentStatus).text}
+                    <Badge
+                      className={
+                        getPaymentStatusInfo(selectedBooking).className
+                      }
+                    >
+                      {
+                        translatePaymentStatus(selectedBooking.paymentStatus)
+                          .text
+                      }
                     </Badge>
                   </div>
 
                   <div className="flex gap-2">
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleUpdateBookingStatus(selectedBooking._id, "canceled")}
-                      disabled={isUpdatingStatus}
-                    >
-                      {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                      Cancelar
-                    </Button>
-                    <Button
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={() => handleUpdateBookingStatus(selectedBooking._id, "completed")}
-                      disabled={isUpdatingStatus}
-                    >
-                      {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                      Concluir
-                    </Button>
+                    {selectedBooking.status !== "canceled" && (
+                      <Button
+                        variant="destructive"
+                        onClick={() =>
+                          handleUpdateBookingStatus(
+                            selectedBooking._id,
+                            "canceled"
+                          )
+                        }
+                        disabled={isUpdatingStatus}
+                      >
+                        {isUpdatingStatus ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Cancelar
+                      </Button>
+                    )}
+                    {selectedBooking.status !== "completed" && (
+                      <Button
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() =>
+                          handleUpdateBookingStatus(
+                            selectedBooking._id,
+                            "completed"
+                          )
+                        }
+                        disabled={isUpdatingStatus}
+                      >
+                        {isUpdatingStatus ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Concluir
+                      </Button>
+                    )}
                   </div>
                 </DialogFooter>
               </>
@@ -703,16 +881,26 @@ export function AgendamentosPage() {
           </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!bookingToDelete} onOpenChange={() => setBookingToDelete(null)}>
+        <AlertDialog
+          open={!!bookingToDelete}
+          onOpenChange={() => setBookingToDelete(null)}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-              <AlertDialogDescription>Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.</AlertDialogDescription>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir este agendamento? Esta ação não
+                pode ser desfeita.
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancelar
+              </AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => bookingToDelete && handleDeleteBooking(bookingToDelete)}
+                onClick={() =>
+                  bookingToDelete && handleDeleteBooking(bookingToDelete)
+                }
                 disabled={isDeleting}
                 className="bg-red-500 hover:bg-red-600"
               >
@@ -722,7 +910,10 @@ export function AgendamentosPage() {
           </AlertDialogContent>
         </AlertDialog>
         {/* Modal para deletar bloqueio */}
-        <AlertDialog open={isBlockDeleteModalOpen} onOpenChange={() => setIsBlockDeleteModalOpen(false)}>
+        <AlertDialog
+          open={isBlockDeleteModalOpen}
+          onOpenChange={() => setIsBlockDeleteModalOpen(false)}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Remover bloqueio de horário</AlertDialogTitle>
@@ -739,16 +930,24 @@ export function AgendamentosPage() {
                 <br />
                 Período:{" "}
                 {selectedBlock?.startTime && selectedBlock?.endTime
-                  ? `${format(new Date(selectedBlock.startTime), "dd/MM/yyyy HH:mm")} - ${format(new Date(selectedBlock.endTime), "HH:mm")}`
+                  ? `${format(
+                      new Date(selectedBlock.startTime),
+                      "dd/MM/yyyy HH:mm"
+                    )} - ${format(new Date(selectedBlock.endTime), "HH:mm")}`
                   : ""}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeletingBlock} onClick={() => setIsBlockDeleteModalOpen(false)}>
+              <AlertDialogCancel
+                disabled={isDeletingBlock}
+                onClick={() => setIsBlockDeleteModalOpen(false)}
+              >
                 Cancelar
               </AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => selectedBlock && handleDeleteBlock(selectedBlock._id)}
+                onClick={() =>
+                  selectedBlock && handleDeleteBlock(selectedBlock._id)
+                }
                 disabled={isDeletingBlock}
                 className="bg-red-500 hover:bg-red-600"
               >
