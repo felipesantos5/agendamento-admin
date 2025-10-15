@@ -134,7 +134,13 @@
 }
 
 .rbc-timeslot-group {
-  min-height: 130px !important;
+  min-height: 260px !important;
+}
+
+@media (min-width: 1024px) {
+  .rbc-timeslot-group {
+    min-height: 130px !important;
+  }
 }
 
 .rbc-agenda-date-cell {
