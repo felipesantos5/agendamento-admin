@@ -268,23 +268,16 @@ export function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Clientes</h1>
-          <p className="text-muted-foreground">Gerencie seus clientes e visualize seu histórico de agendamentos</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-sm">
-            {customers.length} cliente{customers.length !== 1 ? "s" : ""}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Filtros */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <CardHeader>
+          <CardTitle>Lista de Clientes</CardTitle>
+          <CardDescription>
+            {filteredCustomers.length} cliente
+            {filteredCustomers.length !== 1 ? "s" : ""} encontrado
+            {filteredCustomers.length !== 1 ? "s" : ""}
+          </CardDescription>
+
+          <div className="flex flex-col sm:flex-row gap-4 mt-2">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -319,18 +312,6 @@ export function CustomersPage() {
               </Select>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabela de Clientes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Clientes</CardTitle>
-          <CardDescription>
-            {filteredCustomers.length} cliente
-            {filteredCustomers.length !== 1 ? "s" : ""} encontrado
-            {filteredCustomers.length !== 1 ? "s" : ""}
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">

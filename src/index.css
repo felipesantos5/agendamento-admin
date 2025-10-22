@@ -147,15 +147,18 @@
   background: white !important;
 }
 
-.rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(2) {
+.rbc-btn-group:last-child button:first-child,
+.rbc-btn-group:last-child button:nth-child(2) {
   display: none;
 }
 
-.rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(3) {
+.rbc-btn-group:last-child button:first-child,
+.rbc-btn-group:last-child button:nth-child(3) {
   border-radius: 0 4px 4px 0 !important;
 }
 
-.rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(4) {
+.rbc-btn-group:last-child button:first-child,
+.rbc-btn-group:last-child button:nth-child(4) {
   border-radius: 4px 0 0 4px !important;
 }
 
@@ -163,18 +166,16 @@
   color: #272727;
 }
 
-
-
 .rbc-toolbar {
   position: relative;
 }
 
-.rbc-btn-group:first-child  {
+.rbc-btn-group:first-child {
   display: none !important;
 }
 
 @media (min-width: 400px) {
-  .rbc-btn-group:first-child  {
+  .rbc-btn-group:first-child {
     height: 5px;
     display: flex !important;
   }
@@ -188,6 +189,15 @@
   position: absolute;
   bottom: 8px;
   right: 0;
+}
+
+@media (min-width: 768px) {
+  .rbc-btn-group:first-child {
+    position: relative;
+  }
+  .rbc-btn-group:first-child button:last-child {
+    right: -182px;
+  }
 }
 
 .rbc-btn-group:first-child button:nth-child(2) {
@@ -206,7 +216,8 @@
 }
 
 @media (min-width: 1026px) {
-  .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(2) {
+  .rbc-btn-group:last-child button:first-child,
+  .rbc-btn-group:last-child button:nth-child(2) {
     display: inline-block;
   }
 
@@ -214,9 +225,9 @@
     display: inline-block;
   }
 
-  .rbc-btn-group:first-child  {
-   height: auto;
-   margin: 0 !important;
+  .rbc-btn-group:first-child {
+    height: auto;
+    margin: 0 !important;
   }
 
   .rbc-btn-group:first-child button:first-child {
@@ -225,18 +236,20 @@
 
   .rbc-btn-group:first-child button:nth-child(2) {
     position: static;
-    border-radius:  4px 0 0 4px  !important;
+    border-radius: 4px 0 0 4px !important;
   }
 
   .rbc-btn-group:first-child button:last-child {
     position: static;
   }
 
-  .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(3) {
+  .rbc-btn-group:last-child button:first-child,
+  .rbc-btn-group:last-child button:nth-child(3) {
     border-radius: 0 4px 4px 0 !important;
   }
 
-  .rbc-btn-group:last-child button:first-child, .rbc-btn-group:last-child button:nth-child(1) {
+  .rbc-btn-group:last-child button:first-child,
+  .rbc-btn-group:last-child button:nth-child(1) {
     border-radius: 0 !important;
   }
 
