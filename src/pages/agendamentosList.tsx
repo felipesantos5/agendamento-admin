@@ -6,37 +6,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // Imports de UI e Ícones
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Loader2 } from "lucide-react";
 import { Booking } from "@/types/bookings";
 import { translatePaymentStatus } from "@/helper/translatePaymentStatus";
@@ -73,16 +48,11 @@ export const AgendamentosList = () => {
         apiClient.get(`/barbershops/${barbershopId}/barbers`),
       ]);
       // Ordena os agendamentos do mais recente para o mais antigo
-      const sortedBookings = bookingsRes.data.sort(
-        (a: Booking, b: Booking) =>
-          new Date(b.time).getTime() - new Date(a.time).getTime()
-      );
+      const sortedBookings = bookingsRes.data.sort((a: Booking, b: Booking) => new Date(b.time).getTime() - new Date(a.time).getTime());
       setBookings(sortedBookings);
       setAllBarbers(barbersRes.data);
     } catch (err: any) {
-      toast.error(
-        err.response?.data?.error || "Não foi possível carregar os dados."
-      );
+      toast.error(err.response?.data?.error || "Não foi possível carregar os dados.");
     } finally {
       setIsLoading(false);
     }
@@ -98,13 +68,9 @@ export const AgendamentosList = () => {
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
       // Adicionado 'booking.customer &&' para segurança
-      const customerNameMatch =
-        booking.customer &&
-        booking.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const barberMatch =
-        selectedBarber === "all" || booking.barber?._id === selectedBarber;
-      const statusMatch =
-        selectedStatus === "all" || booking.status === selectedStatus;
+      const customerNameMatch = booking.customer && booking.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const barberMatch = selectedBarber === "all" || booking.barber?._id === selectedBarber;
+      const statusMatch = selectedStatus === "all" || booking.status === selectedStatus;
 
       // Retorna true apenas se todos os filtros (que se aplicam) forem verdadeiros
       return customerNameMatch && barberMatch && statusMatch;
@@ -149,9 +115,9 @@ export const AgendamentosList = () => {
     <Card>
       <CardHeader>
         <CardTitle>Histórico de Agendamentos</CardTitle>
-        <CardDescription>
+        {/* <CardDescription>
           Visualize e filtre todos os agendamentos realizados na sua barbearia.
-        </CardDescription>
+        </CardDescription> */}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* --- 4. ÁREA DE FILTROS --- */}
@@ -221,15 +187,11 @@ export const AgendamentosList = () => {
               {paginatedBookings.length > 0 ? (
                 paginatedBookings.map((booking) => (
                   <TableRow key={booking._id}>
-                    <TableCell className="font-medium">
-                      {booking.customer.name}
-                    </TableCell>
+                    <TableCell className="font-medium">{booking.customer.name}</TableCell>
                     <TableCell>{getStatusBadge(booking.status)}</TableCell>
                     <TableCell>{booking.barber.name}</TableCell>
                     <TableCell>{booking.service.name}</TableCell>
-                    <TableCell>
-                      {translatePaymentStatus(booking.paymentStatus).text}
-                    </TableCell>
+                    <TableCell>{translatePaymentStatus(booking.paymentStatus).text}</TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {format(new Date(booking.time), "dd/MM/yyyy 'às' HH:mm", {
                         locale: ptBR,
@@ -259,9 +221,7 @@ export const AgendamentosList = () => {
                     e.preventDefault();
                     setCurrentPage((p) => Math.max(p - 1, 1));
                   }}
-                  className={
-                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
-                  }
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
               <PaginationItem>
@@ -276,11 +236,7 @@ export const AgendamentosList = () => {
                     e.preventDefault();
                     setCurrentPage((p) => Math.min(p + 1, totalPages));
                   }}
-                  className={
-                    currentPage === totalPages
-                      ? "pointer-events-none opacity-50"
-                      : ""
-                  }
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
             </PaginationContent>

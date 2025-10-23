@@ -6,21 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Trash2, PlusCircle, Download, EyeOff, Eye } from "lucide-react"; // Ícones
 import { PhoneFormat } from "@/helper/phoneFormater";
 import { CepFormat } from "@/helper/cepFormarter";
@@ -88,15 +75,7 @@ const initialBarbershopState: Partial<BarbershopData> = {
   workingHours: [],
 };
 
-const daysOfWeek = [
-  "Domingo",
-  "Segunda-feira",
-  "Terça-feira",
-  "Quarta-feira",
-  "Quinta-feira",
-  "Sexta-feira",
-  "Sábado",
-];
+const daysOfWeek = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
 interface AdminOutletContext {
   barbershopId: string;
@@ -106,9 +85,7 @@ interface AdminOutletContext {
 export function BarbeariaConfigPage() {
   const { barbershopId } = useOutletContext<AdminOutletContext>();
 
-  const [formData, setFormData] = useState<Partial<BarbershopData>>(
-    initialBarbershopState
-  );
+  const [formData, setFormData] = useState<Partial<BarbershopData>>(initialBarbershopState);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -129,18 +106,14 @@ export function BarbeariaConfigPage() {
       setError(null);
       setSuccessMessage(null);
       try {
-        const response = await apiClient.get(
-          `${API_BASE_URL}/barbershops/${barbershopId}`
-        );
+        const response = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}`);
         setFormData(response.data);
 
         const url = `${API_BASE_URL}/barbershops/${barbershopId}/qrcode`;
         setQrCodeUrl(url);
       } catch (err) {
         console.error("Erro ao buscar dados da barbearia:", err);
-        setError(
-          "Falha ao carregar os dados da barbearia. Verifique o console."
-        );
+        setError("Falha ao carregar os dados da barbearia. Verifique o console.");
       } finally {
         setIsLoading(false);
       }
@@ -149,9 +122,7 @@ export function BarbeariaConfigPage() {
     fetchBarbershopData();
   }, [barbershopId]);
 
-  const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -199,11 +170,7 @@ export function BarbeariaConfigPage() {
     }));
   };
 
-  const handleWorkingHourChange = (
-    index: number,
-    field: keyof WorkingHour,
-    value: string
-  ) => {
+  const handleWorkingHourChange = (index: number, field: keyof WorkingHour, value: string) => {
     setFormData((prev) => {
       const updatedWorkingHours = [...(prev?.workingHours || [])];
       if (updatedWorkingHours[index]) {
@@ -216,10 +183,7 @@ export function BarbeariaConfigPage() {
   const addWorkingHour = () => {
     setFormData((prev) => ({
       ...prev,
-      workingHours: [
-        ...(prev?.workingHours || []),
-        { day: "Segunda-feira", start: "09:00", end: "18:00" },
-      ],
+      workingHours: [...(prev?.workingHours || []), { day: "Segunda-feira", start: "09:00", end: "18:00" }],
     }));
   };
 
@@ -259,10 +223,7 @@ export function BarbeariaConfigPage() {
         setLogoFile(null); // Limpa o arquivo do estado após o upload
       } catch (uploadError: any) {
         console.error("Erro no upload da logo:", uploadError);
-        setError(
-          uploadError.response?.data?.error ||
-            "Falha ao fazer upload da nova logo. As outras alterações não foram salvas."
-        );
+        setError(uploadError.response?.data?.error || "Falha ao fazer upload da nova logo. As outras alterações não foram salvas.");
         setIsUploading(false);
         setIsLoading(false);
         return; // Interrompe o processo se o upload falhar
@@ -282,17 +243,12 @@ export function BarbeariaConfigPage() {
 
     try {
       // 3. Envie os dados atualizados da barbearia (incluindo a nova logoUrl se houver)
-      const updateResponse = await apiClient.put(
-        `${API_BASE_URL}/barbershops/${barbershopId}`,
-        payload
-      );
+      const updateResponse = await apiClient.put(`${API_BASE_URL}/barbershops/${barbershopId}`, payload);
       setSuccessMessage("Dados da barbearia atualizados com sucesso!");
       setFormData(updateResponse.data); // Atualiza o formData com os dados retornados (incluindo a nova logoUrl)
     } catch (err: any) {
       console.error("Erro ao atualizar barbearia:", err);
-      setError(
-        err.response?.data?.error || "Falha ao atualizar dados da barbearia."
-      );
+      setError(err.response?.data?.error || "Falha ao atualizar dados da barbearia.");
     } finally {
       setIsLoading(false);
     }
@@ -327,24 +283,15 @@ export function BarbeariaConfigPage() {
     }
   };
 
-  if (isLoading && !formData?.name)
-    return <p className="text-center p-10">Carregando configurações...</p>;
-  if (error && !formData?.name)
-    return <p className="text-center p-10 text-red-600">{error}</p>;
-  if (!formData?.name && !isLoading)
-    return (
-      <p className="text-center p-10">
-        Nenhuma configuração encontrada para esta barbearia.
-      </p>
-    );
+  if (isLoading && !formData?.name) return <p className="text-center p-10">Carregando configurações...</p>;
+  if (error && !formData?.name) return <p className="text-center p-10 text-red-600">{error}</p>;
+  if (!formData?.name && !isLoading) return <p className="text-center p-10">Nenhuma configuração encontrada para esta barbearia.</p>;
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>Configurações da Barbearia</CardTitle>
-        <CardDescription>
-          Edite os detalhes do seu estabelecimento.
-        </CardDescription>
+        <CardDescription>Edite os detalhes do seu estabelecimento.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-6">
@@ -352,23 +299,11 @@ export function BarbeariaConfigPage() {
 
           <div className="space-y-2">
             <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name || ""}
-              onChange={handleInputChange}
-              required
-            />
+            <Input id="name" name="name" value={formData.name || ""} onChange={handleInputChange} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              name="description"
-              className="h-40"
-              value={formData.description || ""}
-              onChange={handleInputChange}
-            />
+            <Textarea id="description" name="description" className="h-40" value={formData.description || ""} onChange={handleInputChange} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -387,27 +322,14 @@ export function BarbeariaConfigPage() {
 
             <div className="space-y-2">
               <Label htmlFor="slug">Instagram</Label>
-              <Input
-                id="instagram"
-                name="instagram"
-                value={formData.instagram || ""}
-                onChange={handleInputChange}
-              />
+              <Input id="instagram" name="instagram" value={formData.instagram || ""} onChange={handleInputChange} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="slug">Slug (URL)</Label>
-            <Input
-              id="slug"
-              name="slug"
-              value={formData.slug || ""}
-              onChange={handleInputChange}
-              required
-            />
-            <p className="text-xs text-gray-500">
-              Ex: nome-da-barbearia (usado na URL da sua página)
-            </p>
+            <Input id="slug" name="slug" value={formData.slug || ""} onChange={handleInputChange} required />
+            <p className="text-xs text-gray-500">Ex: nome-da-barbearia (usado na URL da sua página)</p>
           </div>
 
           <div className="space-y-2">
@@ -419,9 +341,7 @@ export function BarbeariaConfigPage() {
               }}
               aspectRatio="square"
             />
-            {isUploading && (
-              <p className="text-sm text-blue-600 mt-2">Enviando logo...</p>
-            )}
+            {isUploading && <p className="text-sm text-blue-600 mt-2">Enviando logo...</p>}
           </div>
 
           <div className="space-y-2">
@@ -430,29 +350,18 @@ export function BarbeariaConfigPage() {
               color={formData.themeColor || "#D10000"} // Usa a cor do formData ou um fallback
               onChange={handleThemeColorChange}
             />
-            <p className="text-xs text-muted-foreground">
-              Esta cor será usada em botões e destaques na página de agendamento
-              da sua barbearia.
-            </p>
+            <p className="text-xs text-muted-foreground">Esta cor será usada em botões e destaques na página de agendamento da sua barbearia.</p>
           </div>
 
           <CardHeader className="px-0!">
             <CardTitle>QR Code para Agendamento</CardTitle>
-            <CardDescription>
-              Use este QR Code em materiais de divulgação para que seus clientes
-              possam agendar facilmente.
-            </CardDescription>
+            <CardDescription>Use este QR Code em materiais de divulgação para que seus clientes possam agendar facilmente.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             {qrCodeUrl ? (
               <>
                 <div className="p-4 bg-white rounded-lg border">
-                  <img
-                    src={qrCodeUrl}
-                    alt="QR Code de Agendamento"
-                    width={200}
-                    height={200}
-                  />
+                  <img src={qrCodeUrl} alt="QR Code de Agendamento" width={200} height={200} />
                 </div>
 
                 <Button onClick={handleDownload}>
@@ -486,67 +395,31 @@ export function BarbeariaConfigPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="rua">Rua</Label>
-                  <Input
-                    id="rua"
-                    name="rua"
-                    value={formData.address?.rua || ""}
-                    onChange={handleAddressChange}
-                    required
-                  />
+                  <Input id="rua" name="rua" value={formData.address?.rua || ""} onChange={handleAddressChange} required />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="numero">Número</Label>
-                  <Input
-                    id="numero"
-                    name="numero"
-                    value={formData.address?.numero || ""}
-                    onChange={handleAddressChange}
-                    required
-                  />
+                  <Input id="numero" name="numero" value={formData.address?.numero || ""} onChange={handleAddressChange} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bairro">Bairro</Label>
-                  <Input
-                    id="bairro"
-                    name="bairro"
-                    value={formData.address?.bairro || ""}
-                    onChange={handleAddressChange}
-                    required
-                  />
+                  <Input id="bairro" name="bairro" value={formData.address?.bairro || ""} onChange={handleAddressChange} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="complemento">Complemento</Label>
-                  <Input
-                    id="complemento"
-                    name="complemento"
-                    value={formData.address?.complemento || ""}
-                    onChange={handleAddressChange}
-                  />
+                  <Input id="complemento" name="complemento" value={formData.address?.complemento || ""} onChange={handleAddressChange} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="cidade">Cidade</Label>
-                  <Input
-                    id="cidade"
-                    name="cidade"
-                    value={formData.address?.cidade || ""}
-                    onChange={handleAddressChange}
-                    required
-                  />
+                  <Input id="cidade" name="cidade" value={formData.address?.cidade || ""} onChange={handleAddressChange} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="estado">Estado (UF)</Label>
-                  <Input
-                    id="estado"
-                    name="estado"
-                    maxLength={2}
-                    value={formData.address?.estado || ""}
-                    onChange={handleAddressChange}
-                    required
-                  />
+                  <Input id="estado" name="estado" maxLength={2} value={formData.address?.estado || ""} onChange={handleAddressChange} required />
                 </div>
               </div>
             </div>
@@ -554,9 +427,7 @@ export function BarbeariaConfigPage() {
 
           {/* Horários de Funcionamento */}
           <fieldset className="border p-4 rounded-md">
-            <legend className="text-lg font-semibold px-1">
-              Horários de Funcionamento
-            </legend>
+            <legend className="text-lg font-semibold px-1">Horários de Funcionamento</legend>
             <div className="space-y-4 mt-2">
               {(formData.workingHours || []).map((wh, index) => (
                 <div
@@ -566,22 +437,11 @@ export function BarbeariaConfigPage() {
                 >
                   {/* Seletor do Dia */}
                   <div className="md:col-span-1">
-                    <Label
-                      htmlFor={`wh-day-${index}`}
-                      className="text-xs font-medium text-gray-600"
-                    >
+                    <Label htmlFor={`wh-day-${index}`} className="text-xs font-medium text-gray-600">
                       Dia da Semana
                     </Label>
-                    <Select
-                      value={wh.day}
-                      onValueChange={(value) =>
-                        handleWorkingHourChange(index, "day", value)
-                      }
-                    >
-                      <SelectTrigger
-                        id={`wh-day-${index}`}
-                        className="mt-1 w-full md:w-40"
-                      >
+                    <Select value={wh.day} onValueChange={(value) => handleWorkingHourChange(index, "day", value)}>
+                      <SelectTrigger id={`wh-day-${index}`} className="mt-1 w-full md:w-40">
                         <SelectValue placeholder="Selecione o dia" />
                       </SelectTrigger>
                       <SelectContent>
@@ -598,10 +458,7 @@ export function BarbeariaConfigPage() {
                   <div className="flex flex-col items-end gap-2 md:flex-row">
                     {/* Input de Início */}
                     <div className="w-full">
-                      <Label
-                        htmlFor={`wh-start-${index}`}
-                        className="text-xs font-medium text-gray-600"
-                      >
+                      <Label htmlFor={`wh-start-${index}`} className="text-xs font-medium text-gray-600">
                         Início
                       </Label>
                       <Input
@@ -609,22 +466,13 @@ export function BarbeariaConfigPage() {
                         type="time"
                         className="mt-1"
                         value={wh.start}
-                        onChange={(e) =>
-                          handleWorkingHourChange(
-                            index,
-                            "start",
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => handleWorkingHourChange(index, "start", e.target.value)}
                       />
                     </div>
 
                     {/* Input de Fim */}
                     <div className="w-full">
-                      <Label
-                        htmlFor={`wh-end-${index}`}
-                        className="text-xs font-medium text-gray-600"
-                      >
+                      <Label htmlFor={`wh-end-${index}`} className="text-xs font-medium text-gray-600">
                         Fim
                       </Label>
                       <Input
@@ -632,9 +480,7 @@ export function BarbeariaConfigPage() {
                         type="time"
                         className="mt-1"
                         value={wh.end}
-                        onChange={(e) =>
-                          handleWorkingHourChange(index, "end", e.target.value)
-                        }
+                        onChange={(e) => handleWorkingHourChange(index, "end", e.target.value)}
                       />
                     </div>
 
@@ -653,13 +499,7 @@ export function BarbeariaConfigPage() {
                 </div>
               ))}
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addWorkingHour}
-                className="mt-2"
-              >
+              <Button type="button" variant="outline" size="sm" onClick={addWorkingHour} className="mt-2">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Horário
               </Button>
             </div>
@@ -667,34 +507,23 @@ export function BarbeariaConfigPage() {
 
           {/* NOVA SEÇÃO: Pagamentos Online */}
           <fieldset className="border p-4 rounded-md">
-            <legend className="text-lg font-semibold px-1">
-              Pagamentos Online
-            </legend>
+            <legend className="text-lg font-semibold px-1">Pagamentos Online</legend>
             <div className="space-y-4 mt-2">
               {/* Toggle para ativar/desativar */}
               <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
-                  <Label htmlFor="payments-enabled">
-                    Ativar checkout online
-                  </Label>
+                  <Label htmlFor="payments-enabled">Ativar checkout online</Label>
                   <CardDescription>
-                    Permitir que clientes paguem pelo agendamento diretamente no
-                    site.
+                    Permitir que clientes paguem pelo agendamento diretamente no site. (eles não serão obrigados a pagar)
                   </CardDescription>
                 </div>
-                <Switch
-                  id="payments-enabled"
-                  checked={formData.paymentsEnabled || false}
-                  onCheckedChange={handlePaymentEnabledChange}
-                />
+                <Switch id="payments-enabled" checked={formData.paymentsEnabled || false} onCheckedChange={handlePaymentEnabledChange} />
               </div>
 
               {/* Campo para o Access Token do Mercado Pago */}
               {formData.paymentsEnabled && (
-                <div className="space-y-2">
-                  <Label htmlFor="mercadoPagoAccessToken">
-                    Access Token do Mercado Pago
-                  </Label>
+                <div className="space-y-2 flex flex-col">
+                  <Label htmlFor="mercadoPagoAccessToken">Access Token do Mercado Pago</Label>
                   <div className="relative">
                     <Input
                       id="mercadoPagoAccessToken"
@@ -703,6 +532,7 @@ export function BarbeariaConfigPage() {
                       value={formData.mercadoPagoAccessToken || ""}
                       onChange={handleInputChange}
                       placeholder="Cole seu Access Token aqui"
+                      className="pr-10"
                     />
                     <Button
                       type="button"
@@ -710,44 +540,35 @@ export function BarbeariaConfigPage() {
                       size="icon"
                       className="absolute inset-y-0 right-0 h-full px-3"
                       onClick={() => setShowToken(!showToken)}
-                      aria-label={
-                        showToken ? "Esconder token" : "Mostrar token"
-                      }
+                      aria-label={showToken ? "Esconder token" : "Mostrar token"}
                     >
-                      {showToken ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Sua chave secreta para processar pagamentos. Não compartilhe
-                    com ninguém.
-                  </p>
+                  <a
+                    className="text-xs text-gray-700 underline"
+                    href="https://www.mercadopago.com.br/settings/account/applications/create-app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Clique aqui para criar sua conta
+                  </a>
+                  <a className="text-xs text-gray-700 underline" href="https://youtu.be/341Dptvsov0" target="_blank" rel="noopener noreferrer">
+                    Video de tutorial explicativo
+                  </a>
                 </div>
               )}
             </div>
           </fieldset>
         </CardContent>
         <CardFooter className="justify-end">
-          <Button
-            type="submit"
-            disabled={isLoading || isUploading}
-            className="cursor-pointer mt-4"
-          >
-            {isLoading
-              ? isUploading
-                ? "Enviando Imagem..."
-                : "Salvando..."
-              : "Salvar Configurações"}
+          <Button type="submit" disabled={isLoading || isUploading} className="cursor-pointer mt-4">
+            {isLoading ? (isUploading ? "Enviando Imagem..." : "Salvando...") : "Salvar Configurações"}
           </Button>
         </CardFooter>
         <div className="px-6 mt-4">
           {error && <p className="text-sm text-red-600">{error}</p>}
-          {successMessage && (
-            <p className="text-sm text-green-600">{successMessage}</p>
-          )}
+          {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
         </div>
       </form>
     </Card>

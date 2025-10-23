@@ -5,7 +5,6 @@ export interface Product {
   description?: string;
   category: string;
   brand?: string;
-  barcode?: string;
   price: {
     purchase: number;
     sale: number;
@@ -14,12 +13,6 @@ export interface Product {
     current: number;
     minimum: number;
     maximum?: number;
-  };
-  unit: string;
-  supplier?: {
-    name?: string;
-    contact?: string;
-    phone?: string;
   };
   image?: string;
   status: "ativo" | "inativo" | "descontinuado";
