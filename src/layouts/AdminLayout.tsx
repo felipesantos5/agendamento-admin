@@ -3,9 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, Link, useParams, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard,
   Settings,
-  Users,
   Scissors,
   CalendarDays,
   ShieldAlert,

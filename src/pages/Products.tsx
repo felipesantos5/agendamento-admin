@@ -1,5 +1,5 @@
 // components/ProductManagement.tsx
-import { useState, useEffect, ChangeEvent } from "react"; // Added ChangeEvent
+import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
