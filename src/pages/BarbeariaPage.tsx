@@ -522,7 +522,7 @@ export function BarbeariaConfigPage() {
 
               {/* Campo para o Access Token do Mercado Pago */}
               {formData.paymentsEnabled && (
-                <div className="space-y-2">
+                <div className="space-y-2 flex flex-col">
                   <Label htmlFor="mercadoPagoAccessToken">Access Token do Mercado Pago</Label>
                   <div className="relative">
                     <Input
@@ -545,7 +545,17 @@ export function BarbeariaConfigPage() {
                       {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500">Sua chave secreta para processar pagamentos. Não compartilhe com ninguém.</p>
+                  <a
+                    className="text-xs text-gray-700 underline"
+                    href="https://www.mercadopago.com.br/settings/account/applications/create-app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Clique aqui para criar sua conta
+                  </a>
+                  <a className="text-xs text-gray-700 underline" href="https://youtu.be/341Dptvsov0" target="_blank" rel="noopener noreferrer">
+                    Video de tutorial explicativo
+                  </a>
                 </div>
               )}
             </div>
