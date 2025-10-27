@@ -432,7 +432,7 @@ export const ProductManagement = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Produto</TableHead>
-              <TableHead>Estoque</TableHead>
+              <TableHead className="pl-12 md:px-2">Estoque</TableHead>
               <TableHead>Preços</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-12 text-right"></TableHead> {/* Added text-right */}
@@ -456,7 +456,6 @@ export const ProductManagement = () => {
                 <TableRow key={product._id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      {/* Add Product Image */}
                       {product.image ? (
                         <img src={product.image} alt={product.name} className="h-10 w-10 rounded object-cover" />
                       ) : (
@@ -470,8 +469,8 @@ export const ProductManagement = () => {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="space-y-1 text-center sm:text-left">
+                  <TableCell className="pl-12 md:px-2">
+                    <div className="space-y-1  sm:text-left">
                       {" "}
                       {/* Centered on small screens */}
                       {product.isLowStock ? (
