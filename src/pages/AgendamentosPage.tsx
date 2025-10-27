@@ -571,10 +571,7 @@ export function AgendamentosPage() {
           </div>
         </div>
         <Link to="novo-agendamento">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Novo Agendamento
-          </Button>
+          <Button>Novo Agendamento</Button>
         </Link>
       </CardHeader>
       <CardContent>
