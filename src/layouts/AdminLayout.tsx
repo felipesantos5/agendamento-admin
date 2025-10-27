@@ -14,8 +14,8 @@ import {
   Package,
   Users2,
   ShoppingCart,
-  HandCoins,
   Contact,
+  LayoutDashboard,
 } from "lucide-react"; // Ícones de exemplo
 import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/services/api";
@@ -28,6 +28,7 @@ interface BarbershopContextData {
   name: string;
   slug: string;
   image: string;
+  paymentsEnabled: boolean;
 }
 
 // Contexto para compartilhar dados da barbearia com as páginas filhas (opcional, mas útil)
@@ -56,12 +57,14 @@ export function AdminLayout() {
       try {
         // Esta rota já existe no seu backend para buscar por slug
         const response = await apiClient.get(`${API_BASE_URL}/barbershops/slug/${barbershopSlug}`);
+        console.log(`asdf`, response.data);
         if (response.data) {
           setBarbershop({
             _id: response.data._id,
             name: response.data.name,
             image: response.data.logoUrl,
             slug: response.data.slug,
+            paymentsEnabled: response.data.paymentsEnabled,
           });
           setError(null);
         } else {
@@ -99,6 +102,7 @@ export function AdminLayout() {
   const outletContextData = {
     barbershopId: barbershop._id,
     barbershopName: barbershop.name,
+    paymentsEnabled: barbershop.paymentsEnabled,
   };
 
   const navItems = [
@@ -114,16 +118,10 @@ export function AdminLayout() {
       icon: <CalendarDays className="mr-2 h-4 w-4" />,
       roles: ["admin", "barber"],
     },
-    // {
-    //   to: "metricas",
-    //   label: "Métricas",
-    //   icon: <LayoutDashboard className="mr-2 h-4 w-4" />,
-    //   roles: ["admin"],
-    // },
     {
-      to: "comissoes",
-      label: "Comissões",
-      icon: <HandCoins className="mr-2 h-4 w-4" />,
+      to: "metricas",
+      label: "Métricas",
+      icon: <LayoutDashboard className="mr-2 h-4 w-4" />,
       roles: ["admin"],
     },
     {
@@ -224,7 +222,6 @@ export function AdminLayout() {
   return (
     <BarbershopAdminContext.Provider value={barbershop}>
       <div className="flex min-h-screen bg-gray-100">
-        {/* Sidebar para Desktop */}
         <aside className="hidden lg:flex lg:flex-col lg:w-52 bg-neutral-950 text-gray-200 fixed h-full">
           <SidebarContent />
         </aside>
@@ -261,11 +258,7 @@ export function AdminLayout() {
           )}
         </div>
 
-        {/* Conteúdo Principal */}
         <main className="flex-1 p-2 lg:p-6  overflow-y-auto lg:ml-52 pt-20">
-          {/* <div className="lg:hidden text-center mb-4 pt-10">
-            <h1 className="text-xl font-bold text-gray-800">{barbershop!.name}</h1>
-          </div> */}
           <Outlet context={outletContextData} />
         </main>
       </div>
