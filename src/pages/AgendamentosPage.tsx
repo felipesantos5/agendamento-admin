@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, ChevronLeft, ChevronRight, Loader2, Phone, PlusCircle, Scissors, User, XCircle } from "lucide-react";
+import { CheckCircle, ChevronLeft, ChevronRight, Loader2, Phone, Scissors, User, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
