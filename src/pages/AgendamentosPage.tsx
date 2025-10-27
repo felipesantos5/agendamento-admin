@@ -549,7 +549,7 @@ export function AgendamentosPage() {
     return <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>;
 
   return (
-    <Card>
+    <Card className="gap-2 md:gap-8">
       <CardHeader className="flex justify-between">
         <div className="flex gap-4 items-center flex-wrap">
           <CardTitle>Agendamentos</CardTitle>

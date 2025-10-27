@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Calendar,
-  dateFnsLocalizer,
-  Views,
-  View,
-  EventProps,
-} from "react-big-calendar";
+import { Calendar, dateFnsLocalizer, Views, View, EventProps } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import useMediaQuery from "@/hooks/useMediaQuery";
@@ -31,27 +25,17 @@ const CustomEvent = ({ event }: EventProps<AgendaEvent>) => {
   }
 
   return (
-    <div
-      className={
-        containerClasses + (isCanceled ? " text-white/50" : " text-white")
-      }
-    >
+    <div className={containerClasses + (isCanceled ? " text-white/50" : " text-white")}>
       <div className={isCanceled ? "opacity-70" : ""}>
         <strong className="font-bold block truncate">
           {format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
         </strong>
         <div className="block truncate">{event.resource.customer?.name}</div>
-        <div className="block truncate opacity-80">
-          {event.resource.service?.name}
-        </div>
+        <div className="block truncate opacity-80">{event.resource.service?.name}</div>
       </div>
 
-      {isCanceled && (
-        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-red-500/80 transform -rotate-6" />
-      )}
-      {isCanceled && (
-        <div className="absolute top-1/2 right-0 w-full h-0.5 bg-red-500/80 transform rotate-6" />
-      )}
+      {isCanceled && <div className="absolute top-1/2 left-0 w-full h-0.5 bg-red-500/80 transform -rotate-6" />}
+      {isCanceled && <div className="absolute top-1/2 right-0 w-full h-0.5 bg-red-500/80 transform rotate-6" />}
     </div>
   );
 };
@@ -93,17 +77,9 @@ interface AgendaViewProps {
   onNavigate: (newDate: Date) => void;
 }
 
-export function AgendaView({
-  events,
-  onSelectEvent,
-  onSelectSlot,
-  currentDate,
-  onNavigate,
-}: AgendaViewProps) {
+export function AgendaView({ events, onSelectEvent, onSelectSlot, currentDate, onNavigate }: AgendaViewProps) {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [currentView, setCurrentView] = useState<View>(
-    isMobile ? Views.DAY : Views.WEEK
-  );
+  const [currentView, setCurrentView] = useState<View>(isMobile ? Views.DAY : Views.WEEK);
 
   useEffect(() => {
     setCurrentView(isMobile ? Views.DAY : Views.WEEK);
@@ -124,7 +100,7 @@ export function AgendaView({
   };
 
   return (
-    <div className="h-[80vh] bg-white p-2 md:p-4 rounded-lg shadow">
+    <div className="h-[95vh] md:h-[81vh] bg-white p-2 md:p-4 rounded-lg shadow">
       <Calendar
         localizer={localizer}
         events={events}
@@ -160,8 +136,7 @@ export function AgendaView({
             return {
               style: {
                 backgroundColor: "#fef3c7", // Fundo amarelo claro
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, #f59e0b, #f59e0b 2px, #fbbf24 2px, #fbbf24 8px)",
+                backgroundImage: "repeating-linear-gradient(45deg, #f59e0b, #f59e0b 2px, #fbbf24 2px, #fbbf24 8px)",
                 color: "#92400e", // Texto marrom escuro
                 border: "1px solid #f59e0b",
                 borderRadius: "4px",
@@ -177,8 +152,7 @@ export function AgendaView({
             return {
               style: {
                 backgroundColor: "transparent",
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, #e9ecef, #e9ecef 10px, #f8f9fa 10px, #f8f9fa 20px)",
+                backgroundImage: "repeating-linear-gradient(45deg, #e9ecef, #e9ecef 10px, #f8f9fa 10px, #f8f9fa 20px)",
                 color: "#495057",
                 border: "1px solid #dee2e6",
                 borderRadius: "4px",
@@ -189,10 +163,7 @@ export function AgendaView({
 
           // Lógica existente para agendamentos
           if (event.resource?.isPast) {
-            style.backgroundColor = hexToRgba(
-              (event.resource as any)?.color || "#333333",
-              0.5
-            );
+            style.backgroundColor = hexToRgba((event.resource as any)?.color || "#333333", 0.5);
           }
 
           if (event.resource?.status === "canceled") {

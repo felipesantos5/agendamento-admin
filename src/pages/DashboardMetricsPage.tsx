@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { DateRange } from "react-day-picker";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
@@ -24,10 +24,10 @@ import {
   UsersRound,
   ClipboardList,
   ClipboardCheck,
-  ClipboardX,
+  ClipboardX, // <-- Icon for Canceled Bookings (Overall)
   Banknote,
   BadgePercent,
-  Clock,
+  Clock, // <-- Icon for Pending Bookings
 } from "lucide-react";
 
 // Helpers & Services

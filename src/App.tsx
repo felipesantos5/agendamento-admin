@@ -5,12 +5,10 @@ import { BarbeariaConfigPage } from "./pages/BarbeariaPage";
 import { ServicesPage } from "./pages/ServicesPage";
 import { BarberPage } from "./pages/BarberPage";
 import { AgendamentosPage } from "./pages/AgendamentosPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 import { SetPasswordPage } from "./pages/SetPasswordPage.tsx";
 import { useAuth } from "./contexts/AuthContext.tsx";
-import CommissionsPage from "./pages/CommissionsPage.tsx";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage.tsx";
 import { AbsencesPage } from "./pages/folga.tsx";
 import { NewBookingPage } from "./pages/NewBookingPage.tsx";
@@ -18,6 +16,7 @@ import { PlansPage } from "./pages/PlansPage.tsx";
 import { CustomersPage } from "./pages/CustomersPage.tsx";
 import { AgendamentosList } from "./pages/agendamentosList.tsx";
 import { ProductManagement } from "./pages/Products.tsx";
+import DashboardMetricsPage from "./pages/DashboardMetricsPage.tsx";
 
 export default function App() {
   return (
@@ -34,19 +33,15 @@ export default function App() {
 
             <Route path="agendamentos" element={<AgendamentosPage />} />
             <Route path="agendamentos/lista" element={<AgendamentosList />} />
-            <Route
-              path="agendamentos/novo-agendamento"
-              element={<NewBookingPage />}
-            />
+            <Route path="agendamentos/novo-agendamento" element={<NewBookingPage />} />
             <Route path="folgas" element={<AbsencesPage />} />
             <Route path="clientes" element={<CustomersPage />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-              <Route path="metricas" element={<DashboardPage />} />
+              <Route path="metricas" element={<DashboardMetricsPage />} />
               <Route path="configuracoes" element={<BarbeariaConfigPage />} />
               <Route path="servicos" element={<ServicesPage />} />
               <Route path="funcionarios" element={<BarberPage />} />
-              <Route path="comissoes" element={<CommissionsPage />} />
               <Route path="planos" element={<PlansPage />} />
               <Route path="produtos" element={<ProductManagement />} />
             </Route>
