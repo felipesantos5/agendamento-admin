@@ -17,22 +17,16 @@ import { Separator } from "@/components/ui/separator";
 import {
   CalendarIcon,
   Users,
-  Scissors,
   DollarSign,
-  TrendingUp,
-  Ban,
   UserCheck,
   UserPlus,
   Loader2,
-  Percent,
-  Ticket,
   UsersRound,
   ClipboardList,
   ClipboardCheck,
   ClipboardX, // <-- Icon for Canceled Bookings (Overall)
   Banknote,
   BadgePercent,
-  AlertCircle, // <-- Icon for Canceled Bookings (Per Barber)
   Clock, // <-- Icon for Pending Bookings
 } from "lucide-react";
 
