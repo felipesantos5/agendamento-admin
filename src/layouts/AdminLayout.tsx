@@ -166,7 +166,7 @@ export function AdminLayout() {
       to: "produtos",
       label: "Produtos",
       icon: <ShoppingCart className="mr-2 h-4 w-4" />,
-      roles: ["admin", "barber"],
+      roles: ["admin"],
     },
   ];
 
