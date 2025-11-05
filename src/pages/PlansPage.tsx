@@ -31,7 +31,8 @@ interface Plan {
   name: string;
   description?: string;
   price: number;
-  durationInDays: number; // Campo adicionado
+  durationInDays: number;
+  totalCredits: number;
 }
 
 interface AdminOutletContext {
@@ -43,6 +44,7 @@ const initialPlanState: Omit<Plan, "_id"> = {
   description: "",
   price: 0,
   durationInDays: 30,
+  totalCredits: 1,
 };
 
 export function PlansPage() {
@@ -88,9 +90,17 @@ export function PlansPage() {
   };
 
   // Função para salvar (criar ou editar)
+  // Nenhuma mudança necessária aqui, pois o payload já pega o estado atualizado
   const handleSavePlan = async () => {
     setIsSubmitting(true);
     const { _id, ...planData } = currentPlan;
+
+    // Validação simples
+    if (Number(currentPlan.totalCredits) <= 0) {
+      toast.error("A quantidade de créditos deve ser pelo menos 1.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       if (_id) {
@@ -141,11 +151,13 @@ export function PlansPage() {
           <CardDescription>Visualize, edite ou remova os planos oferecidos pela sua barbearia.</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* TABELA ATUALIZADA */}
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome do Plano</TableHead>
                 <TableHead>Descrição</TableHead>
+                <TableHead className="text-center">Créditos</TableHead>
                 <TableHead className="text-right">Preço</TableHead>
                 <TableHead className="w-[100px] text-center">Ações</TableHead>
               </TableRow>
@@ -153,7 +165,9 @@ export function PlansPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={5} className="text-center">
+                    {" "}
+                    {/* ColSpan 5 */}
                     Carregando...
                   </TableCell>
                 </TableRow>
@@ -162,6 +176,7 @@ export function PlansPage() {
                   <TableRow key={plan._id}>
                     <TableCell className="font-medium">{plan.name}</TableCell>
                     <TableCell className="text-muted-foreground">{plan.description}</TableCell>
+                    <TableCell className="text-center">{plan.totalCredits}</TableCell> {/* NOVO CAMPO */}
                     <TableCell className="text-right">{PriceFormater(plan.price)}</TableCell>
                     <TableCell className="flex justify-center gap-2">
                       <Button variant="outline" size="icon" onClick={() => handleOpenEditPlanDialog(plan)}>
@@ -191,7 +206,9 @@ export function PlansPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={5} className="text-center">
+                    {" "}
+                    {/* ColSpan 5 */}
                     Nenhum plano cadastrado.
                   </TableCell>
                 </TableRow>
@@ -201,7 +218,7 @@ export function PlansPage() {
         </CardContent>
       </Card>
 
-      {/* Modal de Criar/Editar Plano */}
+      {/* Modal de Criar/Editar Plano (ATUALIZADO) */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -226,7 +243,8 @@ export function PlansPage() {
                 }
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            {/* GRID ATUALIZADA PARA 3 COLUNAS */}
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="planPrice">Preço (R$)</Label>
                 <Input
@@ -254,6 +272,22 @@ export function PlansPage() {
                     })
                   }
                   placeholder="Ex: 30"
+                />
+              </div>
+              {/* NOVO CAMPO DE CRÉDITOS */}
+              <div className="space-y-2">
+                <Label htmlFor="planCredits">Créditos</Label>
+                <Input
+                  id="planCredits"
+                  type="number"
+                  value={currentPlan.totalCredits}
+                  onChange={(e) =>
+                    setCurrentPlan({
+                      ...currentPlan,
+                      totalCredits: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="Ex: 4"
                 />
               </div>
             </div>

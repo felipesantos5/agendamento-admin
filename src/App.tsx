@@ -17,6 +17,8 @@ import { CustomersPage } from "./pages/CustomersPage.tsx";
 import { AgendamentosList } from "./pages/agendamentosList.tsx";
 import { ProductManagement } from "./pages/Products.tsx";
 import DashboardMetricsPage from "./pages/DashboardMetricsPage.tsx";
+import { BarberPerformancePage } from "./pages/BarberPerformancePage.tsx";
+import { RecurrencePage } from "./pages/RecurrencePage.tsx";
 
 export default function App() {
   return (
@@ -36,6 +38,7 @@ export default function App() {
             <Route path="agendamentos/novo-agendamento" element={<NewBookingPage />} />
             <Route path="folgas" element={<AbsencesPage />} />
             <Route path="clientes" element={<CustomersPage />} />
+            <Route path="metricas-barbeiro" element={<BarberPerformancePage />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="metricas" element={<DashboardMetricsPage />} />
@@ -44,6 +47,7 @@ export default function App() {
               <Route path="funcionarios" element={<BarberPage />} />
               <Route path="planos" element={<PlansPage />} />
               <Route path="produtos" element={<ProductManagement />} />
+              <Route path="recorrencia" element={<RecurrencePage />} />
             </Route>
 
             <Route path="*" element={<>nao encontrado</>} />

@@ -15,14 +15,12 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { Loader2 } from "lucide-react";
 import { Booking } from "@/types/bookings";
 import { translatePaymentStatus } from "@/helper/translatePaymentStatus";
+import { AdminOutletContext } from "@/types/AdminOutletContext";
 
 // --- Tipagens ---
 interface Barber {
   _id: string;
   name: string;
-}
-interface AdminOutletContext {
-  barbershopId: string;
 }
 
 // --- Componente Principal ---

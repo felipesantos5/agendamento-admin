@@ -16,6 +16,8 @@ import {
   ShoppingCart,
   Contact,
   LayoutDashboard,
+  ChartBar,
+  Repeat,
 } from "lucide-react"; // Ícones de exemplo
 import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/services/api";
@@ -29,6 +31,8 @@ interface BarbershopContextData {
   slug: string;
   image: string;
   paymentsEnabled: boolean;
+  loyaltyProgramEnable?: boolean;
+  loyaltyProgramCount?: number;
 }
 
 // Contexto para compartilhar dados da barbearia com as páginas filhas (opcional, mas útil)
@@ -57,7 +61,6 @@ export function AdminLayout() {
       try {
         // Esta rota já existe no seu backend para buscar por slug
         const response = await apiClient.get(`${API_BASE_URL}/barbershops/slug/${barbershopSlug}`);
-        console.log(`asdf`, response.data);
         if (response.data) {
           setBarbershop({
             _id: response.data._id,
@@ -65,7 +68,17 @@ export function AdminLayout() {
             image: response.data.logoUrl,
             slug: response.data.slug,
             paymentsEnabled: response.data.paymentsEnabled,
+            loyaltyProgramEnable: response.data.loyaltyProgram.enabled,
+            loyaltyProgramCount: response.data.loyaltyProgram.targetCount,
           });
+
+          console.log(
+            `            loyaltyProgram: {
+              enabled: response.data.loyaltyProgram.enabled,
+              targetCount: response.data.loyaltyProgram.targetCount,
+            },`,
+            response.data.loyaltyProgram.enabled
+          );
           setError(null);
         } else {
           setError("Barbearia não encontrada.");
@@ -103,6 +116,8 @@ export function AdminLayout() {
     barbershopId: barbershop._id,
     barbershopName: barbershop.name,
     paymentsEnabled: barbershop.paymentsEnabled,
+    loyaltyProgramEnable: barbershop.loyaltyProgramEnable,
+    loyaltyProgramCount: barbershop.loyaltyProgramCount,
   };
 
   const navItems = [
@@ -117,6 +132,12 @@ export function AdminLayout() {
       label: "Agendamentos",
       icon: <CalendarDays className="mr-2 h-4 w-4" />,
       roles: ["admin", "barber"],
+    },
+    {
+      to: "metricas-barbeiro",
+      label: "Metricas",
+      icon: <ChartBar className="mr-2 h-4 w-4" />,
+      roles: ["barber"],
     },
     {
       to: "metricas",
@@ -166,6 +187,12 @@ export function AdminLayout() {
       to: "produtos",
       label: "Produtos",
       icon: <ShoppingCart className="mr-2 h-4 w-4" />,
+      roles: ["admin"],
+    },
+    {
+      to: "recorrencia",
+      label: "Recorrência",
+      icon: <Repeat className="mr-2 h-4 w-4" />,
       roles: ["admin"],
     },
   ];

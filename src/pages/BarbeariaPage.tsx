@@ -11,7 +11,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Trash2, PlusCircle, Download, EyeOff, Eye } from "lucide-react"; // Ícones
 import { PhoneFormat } from "@/helper/phoneFormater";
 import { CepFormat } from "@/helper/cepFormarter";
-import { ImageUploader } from "./ImageUploader";
+import { ImageUploader } from "../components/ImageUploader";
 import apiClient from "@/services/api";
 import { ColorSelector } from "@/components/themeColorPicker";
 import { API_BASE_URL } from "@/config/BackendUrl";
