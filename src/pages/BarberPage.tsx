@@ -5,24 +5,8 @@ import { useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,18 +18,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Edit2, Trash2, UserCircle, Copy } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import apiClient from "@/services/api";
 import { API_BASE_URL } from "@/config/BackendUrl";
-import { ImageUploader } from "./ImageUploader";
+import { ImageUploader } from "../components/ImageUploader";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // Contexto do AdminLayout (para obter barbershopId)
@@ -89,15 +67,7 @@ type BarberFormData = {
   commission?: number;
 };
 
-const daysOfWeek = [
-  "Domingo",
-  "Segunda-feira",
-  "Terça-feira",
-  "Quarta-feira",
-  "Quinta-feira",
-  "Sexta-feira",
-  "Sábado",
-];
+const daysOfWeek = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
 const initialBarberFormState: BarberFormData = {
   name: "",
@@ -123,9 +93,7 @@ export function BarberPage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
-  const [currentBarberForm, setCurrentBarberForm] = useState<Partial<Barber>>(
-    initialBarberFormState
-  );
+  const [currentBarberForm, setCurrentBarberForm] = useState<Partial<Barber>>(initialBarberFormState);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null);
   const [setupLink, setSetupLink] = useState("");
@@ -137,9 +105,7 @@ export function BarberPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get(
-        `${API_BASE_URL}/barbershops/${barbershopId}/barbers`
-      );
+      const response = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/barbers`);
       setBarbers(response.data);
     } catch (err) {
       console.error("Erro ao buscar funcionários:", err);
@@ -158,11 +124,7 @@ export function BarberPage() {
     setCurrentBarberForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAvailabilityChange = (
-    index: number,
-    field: keyof Availability,
-    value: string
-  ) => {
+  const handleAvailabilityChange = (index: number, field: keyof Availability, value: string) => {
     setCurrentBarberForm((prev) => {
       const newAvailability = [...(prev?.availability || [])];
       if (newAvailability[index]) {
@@ -175,10 +137,7 @@ export function BarberPage() {
   const addAvailabilitySlot = () => {
     setCurrentBarberForm((prev) => ({
       ...prev,
-      availability: [
-        ...(prev?.availability || []),
-        { day: "Segunda-feira", start: "09:00", end: "18:00" },
-      ],
+      availability: [...(prev?.availability || []), { day: "Segunda-feira", start: "09:00", end: "18:00" }],
     }));
   };
 
@@ -220,9 +179,7 @@ export function BarberPage() {
   const handleBreakDayToggle = (day: string) => {
     setCurrentBarberForm((prev) => {
       const currentDays = prev.break?.days || [];
-      const newDays = currentDays.includes(day)
-        ? currentDays.filter((d) => d !== day)
-        : [...currentDays, day];
+      const newDays = currentDays.includes(day) ? currentDays.filter((d) => d !== day) : [...currentDays, day];
 
       return {
         ...prev,
@@ -252,32 +209,24 @@ export function BarberPage() {
 
       try {
         // Assumindo que você criou uma rota /api/upload/barber-profile que salva em public/uploads/barbers
-        const uploadResponse = await apiClient.post(
-          `${API_BASE_URL}/api/upload/barber-profile`,
-          imageUploadData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
+        const uploadResponse = await apiClient.post(`${API_BASE_URL}/api/upload/barber-profile`, imageUploadData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
         finalImageUrl = uploadResponse.data.imageUrl; // O backend retorna a URL da imagem salva
       } catch (uploadError: any) {
         console.error("Erro no upload da imagem:", uploadError);
-        setError(
-          uploadError.response?.data?.error ||
-            "Falha ao fazer upload da imagem."
-        );
+        setError(uploadError.response?.data?.error || "Falha ao fazer upload da imagem.");
         return;
       }
     }
 
     // 2. Prepara o payload com os dados do barbeiro
-    const validAvailability = (currentBarberForm.availability || []).filter(
-      (slot) => slot.day && slot.start && slot.end
-    );
+    const validAvailability = (currentBarberForm.availability || []).filter((slot) => slot.day && slot.start && slot.end);
     const barberDataPayload: Partial<BarberFormData> = {
       name: currentBarberForm.name,
       image: finalImageUrl,
       availability: validAvailability,
+      email: currentBarberForm.email,
       break: currentBarberForm.break, // Adicionar esta linha
       commission: Number(currentBarberForm.commission),
     };
@@ -293,16 +242,10 @@ export function BarberPage() {
     // 3. Cria ou atualiza o barbeiro
     try {
       if (dialogMode === "add") {
-        const response = await apiClient.post(
-          `${API_BASE_URL}/barbershops/${barbershopId}/barbers`,
-          barberDataPayload
-        );
+        const response = await apiClient.post(`${API_BASE_URL}/barbershops/${barbershopId}/barbers`, barberDataPayload);
         setSetupLink(response.data.setupLink);
       } else if (currentBarberForm._id) {
-        await apiClient.put(
-          `${API_BASE_URL}/barbershops/${barbershopId}/barbers/${currentBarberForm._id}`,
-          barberDataPayload
-        );
+        await apiClient.put(`${API_BASE_URL}/barbershops/${barbershopId}/barbers/${currentBarberForm._id}`, barberDataPayload);
         setIsDialogOpen(false);
       }
       fetchBarbers();
@@ -316,9 +259,7 @@ export function BarberPage() {
     if (!barberToDelete || !barbershopId) return;
     setError(null);
     try {
-      await apiClient.delete(
-        `${API_BASE_URL}/barbershops/${barbershopId}/barbers/${barberToDelete._id}`
-      );
+      await apiClient.delete(`${API_BASE_URL}/barbershops/${barbershopId}/barbers/${barberToDelete._id}`);
       setBarberToDelete(null);
       fetchBarbers();
     } catch (err: any) {
@@ -331,8 +272,7 @@ export function BarberPage() {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(setupLink);
     toast("Link criado com sucesso", {
-      description:
-        "Envie para seu barbeiro criar uma senha e acessar os seus horários agendados. valido até 72 horas.",
+      description: "Envie para seu barbeiro criar uma senha e acessar os seus horários agendados. valido até 72 horas.",
     });
   };
 
@@ -341,8 +281,7 @@ export function BarberPage() {
     setSetupLink("");
   };
 
-  if (isLoading && barbers.length === 0)
-    return <p className="text-center p-10">Carregando funcionários...</p>;
+  if (isLoading && barbers.length === 0) return <p className="text-center p-10">Carregando funcionários...</p>;
 
   return (
     <Card>
@@ -357,17 +296,9 @@ export function BarberPage() {
         )}
       </CardHeader>
       <CardContent>
-        {error && (
-          <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">
-            {error}
-          </p>
-        )}
+        {error && <p className="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">{error}</p>}
         <Table className="mb-0">
-          <TableCaption>
-            {barbers.length === 0 &&
-              !isLoading &&
-              "Nenhum funcionário cadastrado."}
-          </TableCaption>
+          <TableCaption>{barbers.length === 0 && !isLoading && "Nenhum funcionário cadastrado."}</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[300px]">Barbeiro</TableHead>
@@ -378,18 +309,10 @@ export function BarberPage() {
           </TableHeader>
           <TableBody>
             {barbers.map((barber) => (
-              <TableRow
-                key={barber._id}
-                onClick={() => openEditDialog(barber)}
-                className="cursor-pointer"
-              >
+              <TableRow key={barber._id} onClick={() => openEditDialog(barber)} className="cursor-pointer">
                 <TableCell className="font-medium flex gap-1 flex-col md:flex-row pt-4 items-center sm:items-baseline md:items-center">
                   {barber.image ? (
-                    <img
-                      src={barber.image}
-                      alt={barber.name}
-                      className="h-10 w-10 rounded-full object-cover md:mr-3"
-                    />
+                    <img src={barber.image} alt={barber.name} className="h-10 w-10 rounded-full object-cover md:mr-3" />
                   ) : (
                     <UserCircle className="h-10 w-10 text-gray-300 mr-4" />
                   )}
@@ -397,9 +320,7 @@ export function BarberPage() {
                 </TableCell>
                 <TableCell className="text-xs">
                   {barber.availability && barber.availability.length > 0 ? (
-                    barber.availability.map((a, index) => (
-                      <div key={index}>{`${a.day}: ${a.start} - ${a.end}`}</div>
-                    ))
+                    barber.availability.map((a, index) => <div key={index}>{`${a.day}: ${a.start} - ${a.end}`}</div>)
                   ) : (
                     <span className="text-muted-foreground">Não definida</span>
                   )}
@@ -459,11 +380,7 @@ export function BarberPage() {
           {!setupLink ? (
             <>
               <DialogHeader>
-                <DialogTitle>
-                  {dialogMode === "add"
-                    ? "Adicionar Novo Funcionário"
-                    : "Editar Funcionário"}
-                </DialogTitle>
+                <DialogTitle>{dialogMode === "add" ? "Adicionar Novo Funcionário" : "Editar Funcionário"}</DialogTitle>
                 <DialogDescription>
                   {" "}
                   {dialogMode === "add"
@@ -472,10 +389,7 @@ export function BarberPage() {
                 </DialogDescription>
               </DialogHeader>
 
-              <form
-                onSubmit={handleSaveBarber}
-                className="flex-grow overflow-y-auto pr-6 -mr-4 md:-mr-6"
-              >
+              <form onSubmit={handleSaveBarber} className="flex-grow overflow-y-auto pr-6 -mr-4 md:-mr-6">
                 <div className="grid gap-6 py-4">
                   <div className="space-y-1.5">
                     <Label>Foto de Perfil</Label>
@@ -489,29 +403,13 @@ export function BarberPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="name">Nome do Funcionário</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={currentBarberForm.name || ""}
-                      onChange={handleFormInputChange}
-                      required
-                    />
+                    <Input id="name" name="name" value={currentBarberForm.name || ""} onChange={handleFormInputChange} required />
                   </div>
 
                   <div className="space-y-1.5">
                     <Label htmlFor="email">Email de Login</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={currentBarberForm.email || ""}
-                      onChange={handleFormInputChange}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      O convite para definir a senha será associado a este
-                      email.
-                    </p>
+                    <Input id="email" name="email" type="email" value={currentBarberForm.email || ""} onChange={handleFormInputChange} required />
+                    <p className="text-xs text-muted-foreground">O convite para definir a senha será associado a este email.</p>
                   </div>
 
                   <div className="space-y-1.5">
@@ -536,124 +434,85 @@ export function BarberPage() {
 
                     {/* Container para a lista de horários */}
                     <div className="space-y-3">
-                      {(currentBarberForm.availability || []).map(
-                        (slot, index) => (
-                          <div
-                            key={index}
-                            className="grid grid-cols-1 md:grid-cols-[1.5fr_2fr] md:items-end gap-4 p-3 border rounded-lg bg-secondary/50"
-                          >
-                            {/* Seção do Dia (coluna 1 no desktop) */}
-                            <div className="w-full">
-                              <Label
-                                htmlFor={`day-${index}`}
-                                className="text-xs text-muted-foreground"
-                              >
-                                Dia
-                              </Label>
-                              <Select
-                                value={slot.day}
-                                onValueChange={(value) =>
-                                  handleAvailabilityChange(index, "day", value)
-                                }
-                              >
-                                <SelectTrigger
-                                  id={`day-${index}`}
-                                  className="w-full mt-1"
+                      {(currentBarberForm.availability || []).map((slot, index) => (
+                        <div
+                          key={index}
+                          className="grid grid-cols-1 md:grid-cols-[1.5fr_2fr] md:items-end gap-4 p-3 border rounded-lg bg-secondary/50"
+                        >
+                          {/* Seção do Dia (coluna 1 no desktop) */}
+                          <div className="w-full">
+                            <Label htmlFor={`day-${index}`} className="text-xs text-muted-foreground">
+                              Dia
+                            </Label>
+                            <Select value={slot.day} onValueChange={(value) => handleAvailabilityChange(index, "day", value)}>
+                              <SelectTrigger id={`day-${index}`} className="w-full mt-1">
+                                <SelectValue placeholder="Dia" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {daysOfWeek.map((dayName) => (
+                                  <SelectItem key={dayName} value={dayName}>
+                                    {dayName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Seção dos Horários e Botão (coluna 2 no desktop) */}
+                          <div>
+                            <div className="flex flex-col md:flex-row items-end gap-2 ">
+                              {/* Container do "Início" */}
+                              <div className="flex-grow w-full">
+                                <Label htmlFor={`start-${index}`} className="text-xs text-muted-foreground">
+                                  Início (24h)
+                                </Label>
+                                <Input
+                                  id={`start-${index}`}
+                                  type="time"
+                                  step="3600" // Força intervalos de 1 hora
+                                  value={slot.start}
+                                  onChange={(e) => handleAvailabilityChange(index, "start", e.target.value)}
+                                  className="mt-1 w-full text-lg"
+                                  placeholder="08:00"
+                                />
+                              </div>
+
+                              {/* Container do "Fim" */}
+                              <div className="flex-grow w-full">
+                                <Label htmlFor={`end-${index}`} className="text-xs text-muted-foreground">
+                                  Fim (24h)
+                                </Label>
+                                <Input
+                                  id={`end-${index}`}
+                                  type="time"
+                                  step="3600" // Força intervalos de 1 hora
+                                  value={slot.end}
+                                  onChange={(e) => handleAvailabilityChange(index, "end", e.target.value)}
+                                  className="mt-1 w-full text-lg"
+                                  placeholder="18:00"
+                                />
+                              </div>
+
+                              {/* Container do botão de deletar */}
+                              <div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeAvailabilitySlot(index)}
+                                  aria-label="Remover horário"
+                                  className="h-9 w-9"
                                 >
-                                  <SelectValue placeholder="Dia" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {daysOfWeek.map((dayName) => (
-                                    <SelectItem key={dayName} value={dayName}>
-                                      {dayName}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Seção dos Horários e Botão (coluna 2 no desktop) */}
-                            <div>
-                              <div className="flex flex-col md:flex-row items-end gap-2 ">
-                                {/* Container do "Início" */}
-                                <div className="flex-grow w-full">
-                                  <Label
-                                    htmlFor={`start-${index}`}
-                                    className="text-xs text-muted-foreground"
-                                  >
-                                    Início (24h)
-                                  </Label>
-                                  <Input
-                                    id={`start-${index}`}
-                                    type="time"
-                                    step="3600" // Força intervalos de 1 hora
-                                    value={slot.start}
-                                    onChange={(e) =>
-                                      handleAvailabilityChange(
-                                        index,
-                                        "start",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="mt-1 w-full text-lg"
-                                    placeholder="08:00"
-                                  />
-                                </div>
-
-                                {/* Container do "Fim" */}
-                                <div className="flex-grow w-full">
-                                  <Label
-                                    htmlFor={`end-${index}`}
-                                    className="text-xs text-muted-foreground"
-                                  >
-                                    Fim (24h)
-                                  </Label>
-                                  <Input
-                                    id={`end-${index}`}
-                                    type="time"
-                                    step="3600" // Força intervalos de 1 hora
-                                    value={slot.end}
-                                    onChange={(e) =>
-                                      handleAvailabilityChange(
-                                        index,
-                                        "end",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="mt-1 w-full text-lg"
-                                    placeholder="18:00"
-                                  />
-                                </div>
-
-                                {/* Container do botão de deletar */}
-                                <div>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() =>
-                                      removeAvailabilitySlot(index)
-                                    }
-                                    aria-label="Remover horário"
-                                    className="h-9 w-9"
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
                               </div>
                             </div>
                           </div>
-                        )
-                      )}
+                        </div>
+                      ))}
                     </div>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addAvailabilitySlot}
-                      className="mt-2"
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={addAvailabilitySlot} className="mt-2">
                       <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Horário
                     </Button>
                   </div>
@@ -661,47 +520,28 @@ export function BarberPage() {
                   {/* ✅ SEÇÃO DE PAUSA MELHORADA */}
                   <div className="space-y-4">
                     <div className="space-y-3">
-                      <Label className="text-base font-medium">
-                        Horário de Pausa
-                      </Label>
+                      <Label className="text-base font-medium">Horário de Pausa</Label>
 
                       {/* Toggle mais visível e intuitivo */}
                       <div
                         className={`
                     flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all
-                    ${
-                      currentBarberForm.break?.enabled
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-gray-200 bg-gray-50 hover:bg-gray-100"
-                    }
+                    ${currentBarberForm.break?.enabled ? "border-primary bg-primary/5 shadow-sm" : "border-gray-200 bg-gray-50 hover:bg-gray-100"}
                   `}
-                        onClick={() =>
-                          handleBreakChange(
-                            "enabled",
-                            !currentBarberForm.break?.enabled
-                          )
-                        }
+                        onClick={() => handleBreakChange("enabled", !currentBarberForm.break?.enabled)}
                       >
                         <div className="flex items-center space-x-3">
                           <div
                             className={`
                       w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all
-                      ${
-                        currentBarberForm.break?.enabled
-                          ? "border-primary bg-primary"
-                          : "border-gray-300 bg-white"
-                      }
+                      ${currentBarberForm.break?.enabled ? "border-primary bg-primary" : "border-gray-300 bg-white"}
                     `}
                           >
-                            {currentBarberForm.break?.enabled && (
-                              <div className="w-3 h-3 bg-white rounded-full"></div>
-                            )}
+                            {currentBarberForm.break?.enabled && <div className="w-3 h-3 bg-white rounded-full"></div>}
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">
-                              {currentBarberForm.break?.enabled
-                                ? "Pausa Ativada"
-                                : "Ativar Horário de Pausa"}
+                              {currentBarberForm.break?.enabled ? "Pausa Ativada" : "Ativar Horário de Pausa"}
                             </p>
                             <p className="text-sm text-gray-500">
                               {currentBarberForm.break?.enabled
@@ -713,19 +553,13 @@ export function BarberPage() {
                         <div
                           className={`
                     w-12 h-6 rounded-full transition-all relative
-                    ${
-                      currentBarberForm.break?.enabled
-                        ? "bg-primary"
-                        : "bg-gray-300"
-                    }
+                    ${currentBarberForm.break?.enabled ? "bg-primary" : "bg-gray-300"}
                   `}
                         >
                           <div
                             className={`
                       w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all
-                      ${
-                        currentBarberForm.break?.enabled ? "left-6" : "left-0.5"
-                      }
+                      ${currentBarberForm.break?.enabled ? "left-6" : "left-0.5"}
                     `}
                           ></div>
                         </div>
@@ -736,48 +570,32 @@ export function BarberPage() {
                         <div className="space-y-4 p-4 border rounded-lg bg-zinc-50/50 border-zinc-200">
                           {/* Horários da pausa */}
                           <div>
-                            <Label className="text-sm font-medium mb-3 block">
-                              ⏰ Horário da Pausa
-                            </Label>
+                            <Label className="text-sm font-medium mb-3 block">⏰ Horário da Pausa</Label>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <Label
-                                  htmlFor="break-start"
-                                  className="text-xs text-muted-foreground mb-1 block"
-                                >
+                                <Label htmlFor="break-start" className="text-xs text-muted-foreground mb-1 block">
                                   Início da pausa (24h)
                                 </Label>
                                 <Input
                                   id="break-start"
                                   type="time"
                                   step="1800" // Intervalos de 30 minutos
-                                  value={
-                                    currentBarberForm.break?.start || "12:00"
-                                  }
-                                  onChange={(e) =>
-                                    handleBreakChange("start", e.target.value)
-                                  }
+                                  value={currentBarberForm.break?.start || "12:00"}
+                                  onChange={(e) => handleBreakChange("start", e.target.value)}
                                   className="text-lg font-mono"
                                   placeholder="12:00"
                                 />
                               </div>
                               <div>
-                                <Label
-                                  htmlFor="break-end"
-                                  className="text-xs text-muted-foreground mb-1 block"
-                                >
+                                <Label htmlFor="break-end" className="text-xs text-muted-foreground mb-1 block">
                                   Fim da pausa (24h)
                                 </Label>
                                 <Input
                                   id="break-end"
                                   type="time"
                                   step="1800" // Intervalos de 30 minutos
-                                  value={
-                                    currentBarberForm.break?.end || "13:00"
-                                  }
-                                  onChange={(e) =>
-                                    handleBreakChange("end", e.target.value)
-                                  }
+                                  value={currentBarberForm.break?.end || "13:00"}
+                                  onChange={(e) => handleBreakChange("end", e.target.value)}
                                   className="text-lg font-mono"
                                   placeholder="13:00"
                                 />
@@ -787,9 +605,7 @@ export function BarberPage() {
 
                           {/* Dias da semana */}
                           <div>
-                            <Label className="text-sm font-medium mb-3 block">
-                              📅 Dias da Semana
-                            </Label>
+                            <Label className="text-sm font-medium mb-3 block">📅 Dias da Semana</Label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {daysOfWeek.map((day) => (
                                 <div
@@ -807,21 +623,11 @@ export function BarberPage() {
                                   <div
                                     className={`
                               w-5 h-5 rounded border-2 flex items-center justify-center
-                              ${
-                                currentBarberForm.break?.days?.includes(day)
-                                  ? "border-primary bg-primary"
-                                  : "border-gray-300 bg-white"
-                              }
+                              ${currentBarberForm.break?.days?.includes(day) ? "border-primary bg-primary" : "border-gray-300 bg-white"}
                             `}
                                   >
-                                    {currentBarberForm.break?.days?.includes(
-                                      day
-                                    ) && (
-                                      <svg
-                                        className="w-3 h-3 text-white"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                      >
+                                    {currentBarberForm.break?.days?.includes(day) && (
+                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                         <path
                                           fillRule="evenodd"
                                           d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -830,9 +636,7 @@ export function BarberPage() {
                                       </svg>
                                     )}
                                   </div>
-                                  <Label className="font-medium cursor-pointer">
-                                    {day}
-                                  </Label>
+                                  <Label className="font-medium cursor-pointer">{day}</Label>
                                 </div>
                               ))}
                             </div>
@@ -845,19 +649,13 @@ export function BarberPage() {
 
                 {/* Footer do Dialog fica fora da área de scroll */}
                 <DialogFooter className="flex-shrink-0 pt-4 border-t">
-                  {error && (
-                    <p className="text-sm text-red-600 mr-auto">{error}</p>
-                  )}
+                  {error && <p className="text-sm text-red-600 mr-auto">{error}</p>}
                   <DialogClose asChild>
                     <Button type="button" variant="outline">
                       Cancelar
                     </Button>
                   </DialogClose>
-                  <Button type="submit">
-                    {dialogMode === "add"
-                      ? "Adicionar Funcionário"
-                      : "Salvar Alterações"}
-                  </Button>
+                  <Button type="submit">{dialogMode === "add" ? "Adicionar Funcionário" : "Salvar Alterações"}</Button>
                 </DialogFooter>
               </form>
             </>
@@ -866,9 +664,8 @@ export function BarberPage() {
               <DialogHeader>
                 <DialogTitle>Funcionário Criado com Sucesso!</DialogTitle>
                 <DialogDescription>
-                  Copie e envie este link para o funcionário. Ele poderá definir
-                  sua própria senha e acessar o sistema. Este link é de uso
-                  único e expira em 72 horas.
+                  Copie e envie este link para o funcionário. Ele poderá definir sua própria senha e acessar o sistema. Este link é de uso único e
+                  expira em 72 horas.
                 </DialogDescription>
               </DialogHeader>
               <div className="flex items-center space-x-2 my-4">
@@ -888,28 +685,18 @@ export function BarberPage() {
       </Dialog>
 
       {/* AlertDialog para Confirmação de Deleção */}
-      <AlertDialog
-        open={!!barberToDelete}
-        onOpenChange={(open) => !open && setBarberToDelete(null)}
-      >
+      <AlertDialog open={!!barberToDelete} onOpenChange={(open) => !open && setBarberToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover o funcionário "
-              {barberToDelete?.name}"? Os agendamentos existentes para este
-              profissional não serão afetados, mas ele não estará mais
-              disponível para novos agendamentos.
+              Tem certeza que deseja remover o funcionário "{barberToDelete?.name}"? Os agendamentos existentes para este profissional não serão
+              afetados, mas ele não estará mais disponível para novos agendamentos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setBarberToDelete(null)}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteBarber}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogCancel onClick={() => setBarberToDelete(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteBarber} className="bg-red-600 hover:bg-red-700">
               Deletar
             </AlertDialogAction>
           </AlertDialogFooter>

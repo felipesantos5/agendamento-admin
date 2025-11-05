@@ -14,9 +14,7 @@ interface PaymentStatusInfo {
  * @param {string | null | undefined} status - O status recebido da API.
  * @returns {PaymentStatusInfo} - Um objeto com o texto e uma cor.
  */
-export function translatePaymentStatus(
-  status?: string | null
-): PaymentStatusInfo {
+export function translatePaymentStatus(status?: string | null): PaymentStatusInfo {
   // ---- ALTERAÇÃO PRINCIPAL AQUI ----
   // Se o status for nulo, indefinido ou vazio, retorna um objeto com texto vazio.
   if (!status) {
@@ -29,6 +27,7 @@ export function translatePaymentStatus(
   const statusMap: Record<string, PaymentStatusInfo> = {
     // Status de Sucesso
     approved: { text: "Pago no App", color: "success" },
+    plan_credit: { text: "Plano", color: "success" },
 
     // Status Pendentes ou em Análise
     pending: { text: "Pagamento Pendente", color: "warning" },
@@ -42,6 +41,7 @@ export function translatePaymentStatus(
     // Status Pós-pagamento
     refunded: { text: "Devolvido", color: "info" },
     charged_back: { text: "Contestado", color: "danger" },
+    loyalty_reward: { text: "Prêmio recorrencia", color: "default" },
   };
 
   // Retorna o objeto correspondente ou um padrão para status desconhecidos
@@ -70,6 +70,7 @@ export const getPaymentStatusInfo = (booking: PopulatedBooking) => {
   // Lógica para os outros status de pagamento
   switch (booking.paymentStatus) {
     case "approved":
+    case "plan":
       return {
         text: "Pago (Online)",
         className: "bg-green-100 text-green-800 border-green-200",
@@ -88,6 +89,11 @@ export const getPaymentStatusInfo = (booking: PopulatedBooking) => {
       return {
         text: "Falhou/Cancelado",
         className: "bg-red-100 text-red-800 border-red-200",
+      };
+    case "loyalty_reward":
+      return {
+        text: "Prêmio recorrencia",
+        className: "bg-yellow-400 text-black",
       };
     default:
       return {

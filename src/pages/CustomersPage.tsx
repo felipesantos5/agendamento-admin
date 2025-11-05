@@ -23,6 +23,13 @@ import { dateFormatter } from "@/helper/dateFormatter";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { API_BASE_URL } from "@/config/BackendUrl";
 import { PriceFormater } from "@/helper/priceFormater";
+import { AdminOutletContext } from "@/types/AdminOutletContext";
+
+interface LoyaltyData {
+  barbershop: string;
+  progress: number;
+  rewards: number;
+}
 
 interface Customer {
   _id: string;
@@ -32,6 +39,7 @@ interface Customer {
   createdAt: string;
   subscriptions?: Subscription[];
   lastBookingTime?: string;
+  loyaltyData?: LoyaltyData[];
 }
 
 interface Subscription {
@@ -74,10 +82,6 @@ interface Booking {
   notes?: string;
 }
 
-interface AdminOutletContext {
-  barbershopId: string;
-}
-
 interface PaginationData {
   currentPage: number;
   totalPages: number;
@@ -92,7 +96,7 @@ interface CustomersApiResponse {
 
 // --- Componente Principal ---
 export function CustomersPage() {
-  const { barbershopId } = useOutletContext<AdminOutletContext>();
+  const { barbershopId, loyaltyProgramEnable, loyaltyProgramCount } = useOutletContext<AdminOutletContext>();
 
   // Estados existentes...
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -370,6 +374,7 @@ export function CustomersPage() {
                   <TableHead>Plano Ativo</TableHead>
                   <TableHead>Cliente Desde</TableHead>
                   <TableHead>Último Agendamento</TableHead>
+                  {loyaltyProgramEnable && <TableHead className="text-center">Fidelidade</TableHead>}
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -465,6 +470,32 @@ export function CustomersPage() {
                         </TableCell>
                         {/* Célula Último Agendamento */}
                         <TableCell>{getLastBookingBadge(customer.lastBookingTime)}</TableCell>
+
+                        {loyaltyProgramEnable && (
+                          <TableCell className="text-center">
+                            {(() => {
+                              // Encontra o progresso do cliente para ESTA barbearia
+                              const customerProgressData = customer.loyaltyData?.find((data) => data.barbershop === barbershopId);
+                              const progress = customerProgressData?.progress || 0;
+                              const rewards = customerProgressData?.rewards || 0;
+                              const target = loyaltyProgramCount || 10;
+
+                              return (
+                                <div className="flex flex-col items-center justify-center space-y-1">
+                                  {/* Exibe o progresso: 3 / 10 */}
+                                  <span className="font-bold text-sm text-primary">
+                                    {progress}
+                                    <span className="text-muted-foreground text-xs"> / {target}</span>
+                                  </span>
+                                  {/* Exibe quantos faltam */}
+                                  <Badge variant="outline" className="gap-1 text-xs">
+                                    Nº de premios {rewards}
+                                  </Badge>
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
+                        )}
                         {/* Célula Ações */}
                         <TableCell className="text-right">
                           <DropdownMenu>

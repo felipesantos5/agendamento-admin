@@ -3,6 +3,7 @@ import { Calendar, dateFnsLocalizer, Views, View, EventProps } from "react-big-c
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import useMediaQuery from "@/hooks/useMediaQuery";
+import { CheckCircle } from "lucide-react";
 interface AgendaEvent {
   _id: string;
   title: string;
@@ -13,6 +14,7 @@ interface AgendaEvent {
 
 const CustomEvent = ({ event }: EventProps<AgendaEvent>) => {
   const isCanceled = event.resource?.status === "canceled";
+  const isPaid = event.resource?.paymentStatus === "approved";
   const containerClasses = "relative w-full h-full p-1 text-xs overflow-hidden";
 
   if (event.resource?.type === "block") {
@@ -36,6 +38,10 @@ const CustomEvent = ({ event }: EventProps<AgendaEvent>) => {
 
       {isCanceled && <div className="absolute top-1/2 left-0 w-full h-0.5 bg-red-500/80 transform -rotate-6" />}
       {isCanceled && <div className="absolute top-1/2 right-0 w-full h-0.5 bg-red-500/80 transform rotate-6" />}
+
+      {isPaid && !isCanceled && (
+        <CheckCircle className="absolute top-1 right-1 h-6 w-6 text-white" style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.7))" }} />
+      )}
     </div>
   );
 };

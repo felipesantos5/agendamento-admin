@@ -1,12 +1,9 @@
-// src/pages/DashboardMetricsPage.tsx
 import { useEffect, useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { DateRange } from "react-day-picker";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-
-// Shadcn UI Components & Icons
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -24,29 +21,32 @@ import {
   UsersRound,
   ClipboardList,
   ClipboardCheck,
-  ClipboardX, // <-- Icon for Canceled Bookings (Overall)
+  ClipboardX,
   Banknote,
   BadgePercent,
-  Clock, // <-- Icon for Pending Bookings
+  Clock,
+  Package,
+  Scissors,
+  ShoppingCart,
+  TrendingUp,
+  Star,
 } from "lucide-react";
+
+// import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts";
+// import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 // Helpers & Services
 import apiClient from "@/services/api";
 import { PriceFormater } from "@/helper/priceFormater";
 import { API_BASE_URL } from "@/config/BackendUrl";
-
-// --- Tipagens Atualizadas ---
-interface AdminOutletContext {
-  barbershopId: string;
-  paymentsEnabled: boolean;
-}
+import { AdminOutletContext } from "@/types/AdminOutletContext";
 
 interface Period {
   startDate: string;
   endDate: string;
 }
 
-// Interface ajustada para o novo payload de overview
+// ATUALIZADO com os novos campos
 interface OverviewMetrics {
   totalBookings: number;
   completedBookings: number;
@@ -58,18 +58,22 @@ interface OverviewMetrics {
   cancellationRate: number;
   averageTicket: number;
   totalUniqueCustomers: number;
+  revenueFromServices: number;
+  revenueFromPlans: number;
+  totalPlansSold: number;
+  totalRewardsRedeemed: number;
 }
 
 interface BarberPerformance {
   barberId: string;
   name: string;
-  // Nomes ajustados para refletir o payload
-  commissionRate: number; // <-- Mudou de commissionRateInternal
-  totalRevenue: number; // <-- Mudou de totalRevenueInternal
-  completedBookings: number; // <-- Mudou de completedBookingsInternal
-  canceledBookings: number; // <-- NOVO campo
-  totalCommission: number | null; // <-- Mantido, pode ser null
+  commissionRate: number;
+  totalRevenue: number;
+  completedBookings: number;
+  canceledBookings: number;
+  totalCommission: number | null;
   averageTicket: number;
+  totalRewardsRedeemed: number;
 }
 
 interface ServicePerformance {
@@ -77,6 +81,7 @@ interface ServicePerformance {
   name: string;
   totalRevenue: number;
   count: number;
+  redeemedAsReward: number;
 }
 
 interface CustomerStats {
@@ -84,17 +89,24 @@ interface CustomerStats {
   returning: number;
 }
 
+interface ProductMetrics {
+  totalItemsSold: number;
+  totalGrossRevenue: number;
+  totalCostOfGoods: number;
+  totalNetProfit: number;
+}
 interface DashboardMetricsData {
   period: Period;
-  overview: OverviewMetrics; // Ajustado
-  barberPerformance: BarberPerformance[]; // Ajustado
+  overview: OverviewMetrics;
+  barberPerformance: BarberPerformance[];
   servicePerformance: ServicePerformance[];
   customerStats: CustomerStats;
+  productMetrics: ProductMetrics;
 }
 
 // --- Componente Principal ---
 export default function DashboardMetricsPage() {
-  const { barbershopId, paymentsEnabled } = useOutletContext<AdminOutletContext>();
+  const { barbershopId, paymentsEnabled, loyaltyProgramEnable } = useOutletContext<AdminOutletContext>();
   const [data, setData] = useState<DashboardMetricsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +118,8 @@ export default function DashboardMetricsPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
   const [filterMode, setFilterMode] = useState<"month" | "range">("month");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  // graph data
 
   // Função fetchDashboardMetrics (mantida)
   const fetchDashboardMetrics = async (startDate: Date, endDate: Date) => {
@@ -159,7 +173,6 @@ export default function DashboardMetricsPage() {
     }
   }, [barbershopId, selectedMonth, selectedYear, dateRange, filterMode]);
 
-  // Opções para selects (mantido)
   const availableYears = useMemo(() => {
     const years = [];
     for (let i = 0; i < 5; i++) {
@@ -312,20 +325,37 @@ export default function DashboardMetricsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Grupo de Receita e Financeiro */}
+              {/* Grupo de Receita e Financeiro (ATUALIZADO) */}
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-primary flex items-center gap-2">
                   <DollarSign size={20} />
                   Financeiro
                 </h3>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {/* ATUALIZADO para grid com mais colunas */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                   <MetricCard
-                    title="Receita Total (Concluídos)"
-                    value={PriceFormater(data.overview.totalRevenue)} // Usando direto do overview
+                    title="Receita Total"
+                    value={PriceFormater(data.overview.totalRevenue)}
                     icon={Banknote}
-                    description={`${data.overview.completedBookings} agendamentos`} // Usando direto do overview
-                    valueClassName="text-green-600" // Cor para valor principal
+                    description={`${data.overview.completedBookings} agendamentos concluídos`}
+                    valueClassName="text-green-600"
                   />
+                  {/* --- NOVOS CARDS --- */}
+                  <MetricCard
+                    title="Receita de Serviços"
+                    value={PriceFormater(data.overview.revenueFromServices)}
+                    icon={Scissors}
+                    description="Receita de agendamentos avulsos"
+                    valueClassName="text-blue-600"
+                  />
+                  <MetricCard
+                    title="Receita de Planos"
+                    value={PriceFormater(data.overview.revenueFromPlans)}
+                    icon={Package}
+                    description={`${data.overview.totalPlansSold} planos vendidos`}
+                    valueClassName="text-violet-600"
+                  />
+                  {/* --- FIM NOVOS CARDS --- */}
                   <MetricCard
                     title="Comissão Total"
                     value={PriceFormater(data.barberPerformance.reduce((acc, barber) => acc + (barber.totalCommission ?? 0), 0))}
@@ -336,7 +366,7 @@ export default function DashboardMetricsPage() {
                   {paymentsEnabled && (
                     <MetricCard
                       title="Receita Online"
-                      value={PriceFormater(data.overview.onlineRevenue)} // Usando direto do overview
+                      value={PriceFormater(data.overview.onlineRevenue)}
                       icon={DollarSign}
                       description={`${data.overview.onlinePaymentsCount} pagamentos via app`}
                       valueClassName="text-teal-600"
@@ -352,49 +382,44 @@ export default function DashboardMetricsPage() {
                 <h3 className="text-lg font-semibold mb-3 text-primary flex items-center gap-2">
                   <ClipboardList size={20} /> Agendamentos
                 </h3>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  <MetricCard
-                    title="Total Criados"
-                    value={data.overview.totalBookings} // Usando direto do overview
-                    icon={ClipboardList}
-                  />
-                  <MetricCard
-                    title="Concluídos"
-                    value={data.overview.completedBookings} // Usando direto do overview
-                    icon={ClipboardCheck}
-                    valueClassName="text-green-600"
-                  />
+                <div className={`grid gap-4 md:grid-cols-3 lg:grid-cols-4 ${loyaltyProgramEnable && `lg:grid-cols-5`}`}>
+                  <MetricCard title="Total Criados" value={data.overview.totalBookings} icon={ClipboardList} />
+                  <MetricCard title="Concluídos" value={data.overview.completedBookings} icon={ClipboardCheck} valueClassName="text-green-600" />
                   <MetricCard
                     title="Cancelados"
-                    value={data.overview.canceledBookings} // Usando direto do overview
-                    icon={ClipboardX} // Mudado o ícone
+                    value={data.overview.canceledBookings}
+                    icon={ClipboardX}
                     description={`${data.overview.cancellationRate.toFixed(1)}% taxa`}
-                    valueClassName="text-red-600" // Cor para cancelados
+                    valueClassName="text-red-600"
                   />
                   <MetricCard
                     title="Pendentes"
-                    value={data.overview.pendingBookings} // Usando direto do overview
+                    value={data.overview.pendingBookings}
                     icon={Clock}
                     description="Aguardando status final"
-                    valueClassName="text-orange-600" // Cor para pendentes
+                    valueClassName="text-orange-600"
                   />
+                  {loyaltyProgramEnable && (
+                    <MetricCard
+                      title="Prêmios Resgatados"
+                      value={data.overview.totalRewardsRedeemed}
+                      icon={Star}
+                      description="Usados no período"
+                      valueClassName="text-yellow-600"
+                    />
+                  )}
                 </div>
               </div>
 
               <Separator />
 
-              {/* Grupo de Clientes */}
+              {/* Grupo de Clientes (mantido) */}
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-primary flex items-center gap-2">
                   <UsersRound size={20} /> Clientes
                 </h3>
                 <div className="grid gap-4 md:grid-cols-3">
-                  <MetricCard
-                    title="Clientes Únicos"
-                    value={data.overview.totalUniqueCustomers} // Usando direto do overview
-                    icon={Users}
-                    description="Atendidos no período"
-                  />
+                  <MetricCard title="Clientes Únicos" value={data.overview.totalUniqueCustomers} icon={Users} description="Atendidos no período" />
                   <MetricCard
                     title="Novos Clientes"
                     value={data.customerStats.new}
@@ -411,10 +436,44 @@ export default function DashboardMetricsPage() {
                   />
                 </div>
               </div>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary flex items-center gap-2">
+                  <ShoppingCart size={20} /> Métricas de Produtos
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <MetricCard title="Itens Vendidos" value={data.productMetrics.totalItemsSold} icon={ShoppingCart} />
+                  <MetricCard
+                    title="Receita Bruta (Produtos)"
+                    value={PriceFormater(data.productMetrics.totalGrossRevenue)}
+                    icon={Banknote}
+                    valueClassName="text-green-600"
+                  />
+                  <MetricCard
+                    title="Custo (Produtos)"
+                    value={PriceFormater(data.productMetrics.totalCostOfGoods)}
+                    icon={DollarSign}
+                    valueClassName="text-red-600"
+                  />
+                  <MetricCard
+                    title="Lucro Líquido (Produtos)"
+                    value={PriceFormater(data.productMetrics.totalNetProfit)}
+                    icon={BadgePercent}
+                    valueClassName="text-purple-600"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* --- Desempenho dos Barbeiros ATUALIZADO --- */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-primary flex items-center gap-2">
+              <TrendingUp size={20} />
+              Faturamento Anual ({selectedYear})
+            </h3>
+          </div>
+
+          {/* --- Desempenho dos Barbeiros (mantido) --- */}
           <Card>
             <CardHeader>
               <CardTitle>Desempenho por Profissional</CardTitle>
@@ -425,9 +484,8 @@ export default function DashboardMetricsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Profissional</TableHead>
-                    {/* Agrupando colunas relacionadas */}
                     <TableHead className="text-center text-blue-600">Atendidos</TableHead>
-                    <TableHead className="text-center text-red-600 hidden md:table-cell">Cancelados</TableHead> {/* Nova Coluna */}
+                    <TableHead className="text-center text-red-600 hidden md:table-cell">Cancelados</TableHead>
                     <TableHead className="text-right text-green-600">Receita</TableHead>
                     <TableHead className="text-right text-green-600 hidden lg:table-cell">Ticket Médio</TableHead>
                     <TableHead className="text-center text-purple-600 hidden md:table-cell">Comissão (%)</TableHead>
@@ -439,23 +497,19 @@ export default function DashboardMetricsPage() {
                     data.barberPerformance.map((barber) => (
                       <TableRow key={barber.barberId}>
                         <TableCell className="font-medium">{barber.name}</TableCell>
-                        {/* Usando os novos campos */}
                         <TableCell className="text-center">{barber.completedBookings}</TableCell>
-                        <TableCell className="text-center text-red-700 hidden md:table-cell">{barber.canceledBookings}</TableCell>{" "}
-                        {/* Exibindo cancelados */}
+                        <TableCell className="text-center text-red-700 hidden md:table-cell">{barber.canceledBookings}</TableCell>
                         <TableCell className="text-right text-green-700">{PriceFormater(barber.totalRevenue)}</TableCell>
                         <TableCell className="text-right text-green-700 hidden lg:table-cell">{PriceFormater(barber.averageTicket)}</TableCell>
                         <TableCell className="text-center text-purple-700 hidden md:table-cell">{barber.commissionRate}%</TableCell>
-                        <TableCell className="text-right font-semibold text-purple-700">{PriceFormater(barber.totalCommission ?? 0)}</TableCell>{" "}
-                        {/* Usa o valor ou 0 se for null */}
+                        <TableCell className="text-right font-semibold text-purple-700">{PriceFormater(barber.totalCommission ?? 0)}</TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
                       <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                         Nenhum dado de profissional para este período.
-                      </TableCell>{" "}
-                      {/* Ajustado colSpan */}
+                      </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -463,7 +517,7 @@ export default function DashboardMetricsPage() {
             </CardContent>
           </Card>
 
-          {/* Desempenho dos Serviços (mantido como antes) */}
+          {/* Desempenho dos Serviços (mantido) */}
           <Card>
             <CardHeader>
               <CardTitle>Serviços Mais Populares</CardTitle>
@@ -504,14 +558,14 @@ export default function DashboardMetricsPage() {
   );
 }
 
-// --- Componente MetricCard ATUALIZADO para aceitar cor ---
+// --- Componente MetricCard (mantido) ---
 interface MetricCardProps {
   title: string;
   value: string | number;
   icon: React.ElementType;
   description?: string;
   className?: string;
-  valueClassName?: string; // <-- Nova prop para cor do valor
+  valueClassName?: string;
 }
 
 function MetricCard({ title, value, icon: Icon, description, className, valueClassName }: MetricCardProps) {
@@ -522,7 +576,6 @@ function MetricCard({ title, value, icon: Icon, description, className, valueCla
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        {/* Aplica a classe de cor se fornecida */}
         <div className={`text-2xl font-bold ${valueClassName ? valueClassName : ""}`}>{value}</div>
         {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </CardContent>

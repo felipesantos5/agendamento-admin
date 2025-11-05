@@ -1,17 +1,10 @@
-// src/pages/LoginPage.tsx
 import { useState, FormEvent } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import apiClient from "@/services/api";
 import { API_BASE_URL } from "@/config/BackendUrl";
 import {
@@ -38,9 +31,7 @@ export function LoginPage() {
 
   if (auth.isAuthenticated) {
     // Se já autenticado, redireciona para o dashboard da barbearia do usuário
-    return (
-      <Navigate to={`/${auth.user?.barbershopSlug}/configuracoes`} replace />
-    );
+    return <Navigate to={`/${auth.user?.barbershopSlug}/configuracoes`} replace />;
   }
 
   const handleLogin = async (e: FormEvent) => {
@@ -48,20 +39,14 @@ export function LoginPage() {
     setError("");
     setIsLoading(true);
     try {
-      const response = await apiClient.post(
-        `${API_BASE_URL}/api/auth/admin/login`,
-        { email, password }
-      );
+      const response = await apiClient.post(`${API_BASE_URL}/api/auth/admin/login`, { email, password });
       auth.login(response.data.token, response.data.user);
       // Redireciona para o dashboard da barbearia específica após o login
       navigate(`/${response.data.user.barbershopSlug}/dashboard`, {
         replace: true,
       });
     } catch (err: any) {
-      setError(
-        err.response?.data?.error ||
-          "Falha no login. Verifique suas credenciais."
-      );
+      setError(err.response?.data?.error || "Falha no login. Verifique suas credenciais.");
     } finally {
       setIsLoading(false);
     }
@@ -94,9 +79,7 @@ export function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Login do Painel</CardTitle>
-          <CardDescription>
-            Acesse o painel de controle da sua barbearia.
-          </CardDescription>
+          <CardDescription>Acesse o painel de controle da sua barbearia.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -109,6 +92,7 @@ export function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -119,6 +103,7 @@ export function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -138,8 +123,7 @@ export function LoginPage() {
                 <DialogHeader>
                   <DialogTitle>Recuperar Senha</DialogTitle>
                   <DialogDescription>
-                    Digite seu e-mail abaixo. Se ele estiver cadastrado,
-                    enviaremos um link para você criar uma nova senha.
+                    Digite seu e-mail abaixo. Se ele estiver cadastrado, enviaremos um link para você criar uma nova senha.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -159,19 +143,10 @@ export function LoginPage() {
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button
-                      variant="ghost"
-                      id="close-dialog-btn"
-                      className="hidden"
-                    />
+                    <Button variant="ghost" id="close-dialog-btn" className="hidden" />
                   </DialogClose>
-                  <Button
-                    onClick={handleRequestPasswordReset}
-                    disabled={isSendingLink}
-                  >
-                    {isSendingLink
-                      ? "Enviando..."
-                      : "Enviar Link de Recuperação"}
+                  <Button onClick={handleRequestPasswordReset} disabled={isSendingLink}>
+                    {isSendingLink ? "Enviando..." : "Enviar Link de Recuperação"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

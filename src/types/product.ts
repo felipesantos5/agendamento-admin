@@ -24,7 +24,7 @@ export interface Product {
 
 export interface StockMovement {
   _id: string;
-  type: "entrada" | "saida" | "ajuste" | "perda" | "venda";
+  type: "entrada" | "saida" | "venda";
   quantity: number;
   reason: string;
   previousStock: number;

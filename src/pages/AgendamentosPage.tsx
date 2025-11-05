@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, ChevronLeft, ChevronRight, Loader2, Phone, Scissors, User, XCircle } from "lucide-react";
+import { CheckCircle, ChevronLeft, ChevronRight, Loader2, Phone, Scissors, Star, User, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -27,12 +27,7 @@ import { Barber } from "@/types/barberShop";
 import { getPaymentStatusInfo, translatePaymentStatus } from "@/helper/translatePaymentStatus";
 import { API_BASE_URL } from "@/config/BackendUrl";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
-
-// Contexto do AdminLayout
-interface AdminOutletContext {
-  barbershopId: string;
-  barbershopName: string;
-}
+import { AdminOutletContext } from "@/types/AdminOutletContext";
 
 // Tipo para os dados do agendamento
 interface Booking {
@@ -113,6 +108,7 @@ export function AgendamentosPage() {
     return localStorage.getItem("agendaBarberFilter") || "all";
   });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [newBlockData, setNewBlockData] = useState({
@@ -545,6 +541,34 @@ export function AgendamentosPage() {
     return new Date(year, month, day) < today;
   };
 
+  const handleRedeemReward = async () => {
+    if (!selectedBooking || !barbershopId) return;
+
+    setIsRedeeming(true);
+    try {
+      // 1. Chama a nova rota de API
+      await apiClient.put(`${API_BASE_URL}/barbershops/${barbershopId}/bookings/${selectedBooking._id}/redeem-reward`);
+
+      // 2. Sucesso
+      toast.success("Recompensa resgatada com sucesso!");
+
+      // 3. Fecha o modal
+      setIsModalOpen(false);
+
+      // 4. Busca todos os dados novos (incluindo o agendamento atualizado)
+      // Isso garante que 'bookings' e 'agendaEvents' sejam recriados com dados válidos
+      await fetchPageData();
+
+      // 5. Limpa o estado do modal
+      setSelectedBooking(null);
+    } catch (error: any) {
+      console.error("Erro ao resgatar recompensa:", error);
+      toast.error(error.response?.data?.error || "Falha ao resgatar a recompensa.");
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
+
   if (isLoading && bookings.length === 0 && allBarbers.length === 0)
     return <p className="text-center p-10">Carregando agendamentos e barbeiros...</p>;
 
@@ -698,77 +722,136 @@ export function AgendamentosPage() {
           <DialogContent className="sm:max-w-[425px]">
             {selectedBooking && (
               <>
-                <DialogHeader>
-                  <DialogTitle>Detalhes do Agendamento</DialogTitle>
-                  <DialogDescription>{format(new Date(selectedBooking.time), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Cliente</p> <p className="font-semibold">{selectedBooking.customer?.name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Telefone</p>
-                      <a
-                        href={`https://wa.me/55${selectedBooking.customer?.phone}`}
-                        target="_blank"
-                        className="font-semibold underline flex items-center gap-2"
-                      >
-                        {selectedBooking.customer?.phone} <WhatsAppIcon />
-                      </a>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Scissors className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Serviço</p> <p className="font-semibold">{selectedBooking.service?.name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Profissional</p> <p className="font-semibold">{selectedBooking.barber?.name}</p>
-                    </div>
-                  </div>
-                </div>
-                {/* Rodapé com o Status e os Botões de Ação */}
-                <DialogFooter className="flex flex-col sm:flex-row sm:justify-between items-center gap-2">
-                  <div className="flex gap-2 items-center">
-                    <Badge className={getStatusInfo(selectedBooking).className}>{getStatusInfo(selectedBooking).text}</Badge>
-                    {selectedBooking.paymentStatus && (
-                      <Badge className={getPaymentStatusInfo(selectedBooking).className}>
-                        {translatePaymentStatus(selectedBooking.paymentStatus).text}
-                      </Badge>
-                    )}
-                  </div>
+                {/* Lógica de Fidelidade movida para o topo para ser reutilizada */}
+                {(() => {
+                  const loyaltyData = selectedBooking.customer?.loyaltyData?.find((data: any) => data.barbershop === barbershopId);
+                  const hasReward = loyaltyData && loyaltyData.rewards > 0;
 
-                  <div className="flex gap-2">
-                    {selectedBooking.status !== "canceled" && (
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleUpdateBookingStatus(selectedBooking._id, "canceled")}
-                        disabled={isUpdatingStatus}
-                      >
-                        {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                        Cancelar
-                      </Button>
-                    )}
-                    {selectedBooking.status !== "completed" && (
-                      <Button
-                        className="bg-green-600 hover:bg-green-700"
-                        onClick={() => handleUpdateBookingStatus(selectedBooking._id, "completed")}
-                        disabled={isUpdatingStatus}
-                      >
-                        {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                        Concluir
-                      </Button>
-                    )}
-                  </div>
-                </DialogFooter>
+                  const isPaid = selectedBooking.paymentStatus === "approved";
+                  const isRedeemed = selectedBooking.paymentStatus === "redeemed"; // Assumindo que a API retorne isso
+                  const isCanceled = selectedBooking.status === "canceled";
+
+                  // O cliente pode resgatar se tiver recompensa E
+                  // o agendamento NÃO estiver pago, NÃO estiver resgatado, e NÃO estiver cancelado
+                  const canRedeem = hasReward && !isPaid && !isRedeemed && !isCanceled;
+
+                  return (
+                    <>
+                      <DialogHeader>
+                        <DialogTitle>Detalhes do Agendamento</DialogTitle>
+                        <DialogDescription>
+                          {format(new Date(selectedBooking.time), "EEEE, dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Cliente</p> <p className="font-semibold">{selectedBooking.customer?.name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Telefone</p>
+                            <a
+                              href={`https://wa.me/55${selectedBooking.customer?.phone}`}
+                              target="_blank"
+                              className="font-semibold underline flex items-center gap-2"
+                            >
+                              {selectedBooking.customer?.phone} <WhatsAppIcon />
+                            </a>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Scissors className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Serviço</p> <p className="font-semibold">{selectedBooking.service?.name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <User className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Profissional</p>{" "}
+                            <p className="font-semibold">{selectedBooking.barber?.name}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Alerta de Fidelidade (Atualizado) */}
+                      {hasReward && !isRedeemed && (
+                        <div className="flex items-center gap-3 p-3 rounded-md bg-yellow-50 border border-yellow-200">
+                          <Star className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-yellow-800">Prêmio de Fidelidade Disponível!</p>
+                            <p className="text-sm text-yellow-700">Este cliente tem {loyaltyData.rewards} recompensa(s) para resgatar.</p>
+                          </div>
+                        </div>
+                      )}
+                      {/* Alerta de Resgatado */}
+                      {isRedeemed && (
+                        <div className="flex items-center gap-3 p-3 rounded-md bg-green-50 border border-green-200">
+                          <Star className="h-5 w-5 text-green-500 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-800">Prêmio Resgatado!</p>
+                            <p className="text-sm text-green-700">Este agendamento foi pago com um prêmio.</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Rodapé com o Status e os Botões de Ação */}
+                      <DialogFooter className="flex flex-col sm:flex-row sm:justify-between items-center gap-2">
+                        {/* Lado Esquerdo: Status */}
+                        <div className="flex gap-2 items-center flex-wrap">
+                          <Badge className={getStatusInfo(selectedBooking).className}>{getStatusInfo(selectedBooking).text}</Badge>
+                          {selectedBooking.paymentStatus && (
+                            <Badge className={getPaymentStatusInfo(selectedBooking).className}>
+                              {translatePaymentStatus(selectedBooking.paymentStatus).text}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Lado Direito: Botões de Ação */}
+                        <div className="flex gap-2 flex-wrap sm:flex-nowrap justify-center sm:justify-end">
+                          {/* --- NOVO BOTÃO DE RESGATE --- */}
+                          {canRedeem && (
+                            <Button
+                              variant="outline"
+                              className="border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-700"
+                              onClick={handleRedeemReward}
+                              disabled={isRedeeming || isUpdatingStatus}
+                            >
+                              {isRedeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />}
+                              Resgatar Prêmio
+                            </Button>
+                          )}
+
+                          {/* Botões existentes (agora condicionados por 'isRedeemed') */}
+                          {selectedBooking.status !== "canceled" && !isRedeemed && (
+                            <Button
+                              variant="destructive"
+                              onClick={() => handleUpdateBookingStatus(selectedBooking._id, "canceled")}
+                              disabled={isUpdatingStatus || isRedeeming || isPaid}
+                            >
+                              {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                              Cancelar
+                            </Button>
+                          )}
+                          {selectedBooking.status !== "completed" && !isRedeemed && (
+                            <Button
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleUpdateBookingStatus(selectedBooking._id, "completed")}
+                              disabled={isUpdatingStatus || isRedeeming}
+                            >
+                              {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                              Concluir
+                            </Button>
+                          )}
+                        </div>
+                      </DialogFooter>
+                    </>
+                  );
+                })()}
               </>
             )}
           </DialogContent>

@@ -39,7 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ImageUploader } from "./ImageUploader"; // Import ImageUploader
+import { ImageUploader } from "../components/ImageUploader"; // Import ImageUploader
 
 import { API_BASE_URL } from "@/config/BackendUrl";
 import { useOutletContext } from "react-router-dom";
