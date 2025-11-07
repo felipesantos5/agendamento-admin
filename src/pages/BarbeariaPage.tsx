@@ -91,7 +91,10 @@ export function BarbeariaConfigPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
   const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [qrCodeBlob, setQrCodeBlob] = useState<Blob | null>(null);
+
   const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
@@ -109,8 +112,15 @@ export function BarbeariaConfigPage() {
         const response = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}`);
         setFormData(response.data);
 
-        const url = `${API_BASE_URL}/barbershops/${barbershopId}/qrcode`;
-        setQrCodeUrl(url);
+        const qrResponse = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/qrcode`, {
+          responseType: "blob",
+        });
+
+        const blob = qrResponse.data;
+        setQrCodeBlob(blob);
+
+        const localUrl = URL.createObjectURL(blob);
+        setQrCodeUrl(localUrl);
       } catch (err) {
         console.error("Erro ao buscar dados da barbearia:", err);
         setError("Falha ao carregar os dados da barbearia. Verifique o console.");
@@ -254,16 +264,12 @@ export function BarbeariaConfigPage() {
     }
   };
 
-  const handleDownload = async () => {
-    if (!qrCodeUrl) return;
+  const handleDownload = () => {
+    if (!qrCodeBlob) return; // Usa o blob que já salvamos
 
     try {
-      // Baixa a imagem como um "blob" (um tipo de dado binário)
-      const response = await fetch(qrCodeUrl);
-      const blob = await response.blob();
-
       // Cria uma URL temporária no navegador para este blob
-      const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(qrCodeBlob);
 
       // Cria um elemento de link <a> invisível
       const link = document.createElement("a");
@@ -279,7 +285,6 @@ export function BarbeariaConfigPage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Erro ao baixar o QR Code:", error);
-      // Adicione um toast.error aqui se quiser
     }
   };
 
