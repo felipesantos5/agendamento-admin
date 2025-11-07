@@ -152,19 +152,6 @@ export function AdminLayout() {
       roles: ["admin", "barber"],
     },
     {
-      to: "funcionarios",
-      label: "Funcionários",
-      icon: <Contact className="mr-2 h-4 w-4" />,
-      roles: ["admin"],
-    },
-    {
-      to: "servicos",
-      label: "Serviços",
-      icon: <Scissors className="mr-2 h-4 w-4" />,
-      roles: ["admin"],
-    },
-
-    {
       to: "agendamentos/lista",
       label: " Histórico",
       icon: <CalendarDays className="mr-2 h-4 w-4" />,
@@ -177,6 +164,19 @@ export function AdminLayout() {
       icon: <Users2 className="mr-2 h-4 w-4" />,
       roles: ["admin", "barber"],
     },
+    {
+      to: "funcionarios",
+      label: "Funcionários",
+      icon: <Contact className="mr-2 h-4 w-4" />,
+      roles: ["admin"],
+    },
+    {
+      to: "servicos",
+      label: "Serviços",
+      icon: <Scissors className="mr-2 h-4 w-4" />,
+      roles: ["admin"],
+    },
+
     {
       to: "planos",
       label: "Planos",
