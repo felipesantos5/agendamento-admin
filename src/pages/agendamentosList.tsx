@@ -185,10 +185,10 @@ export const AgendamentosList = () => {
               {paginatedBookings.length > 0 ? (
                 paginatedBookings.map((booking) => (
                   <TableRow key={booking._id}>
-                    <TableCell className="font-medium">{booking.customer.name}</TableCell>
+                    <TableCell className="font-medium">{booking.customer?.name || "Cliente Deletado"}</TableCell>
                     <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                    <TableCell>{booking.barber.name}</TableCell>
-                    <TableCell>{booking.service.name}</TableCell>
+                    <TableCell>{booking.barber?.name || "Profissional Deletado"}</TableCell>
+                    <TableCell>{booking.service?.name || "Serviço Deletado"}</TableCell>
                     <TableCell>{translatePaymentStatus(booking.paymentStatus).text}</TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {format(new Date(booking.time), "dd/MM/yyyy 'às' HH:mm", {
