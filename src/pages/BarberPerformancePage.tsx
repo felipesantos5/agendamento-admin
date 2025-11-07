@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, UserCheck, Loader2, Banknote, BadgePercent, ClipboardList, Scissors } from "lucide-react";
+import { Users, DollarSign, Loader2, Banknote, BadgePercent, ClipboardList, Scissors } from "lucide-react";
 
 // Helpers e Serviços
 import apiClient from "@/services/api";
