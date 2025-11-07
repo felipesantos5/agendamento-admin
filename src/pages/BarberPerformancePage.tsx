@@ -177,7 +177,7 @@ export function BarberPerformancePage() {
                 <DollarSign size={20} />
                 Visão Geral
               </h3>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
                   title="Receita Total Gerada"
                   value={PriceFormater(data.overview.totalRevenue)}
@@ -193,7 +193,6 @@ export function BarberPerformancePage() {
                   valueClassName="text-purple-600"
                 />
                 <MetricCard title="Total de Atendimentos" value={data.overview.totalBookings} icon={ClipboardList} />
-                <MetricCard title="Ticket Médio" value={PriceFormater(data.overview.averageTicket)} icon={UserCheck} valueClassName="text-blue-600" />
                 <MetricCard title="Clientes Únicos" value={data.overview.totalUniqueCustomers} icon={Users} description="Clientes que você atendeu" />
               </div>
             </div>
