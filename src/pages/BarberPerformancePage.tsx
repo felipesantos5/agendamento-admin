@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, UserCheck, Loader2, Banknote, BadgePercent, ClipboardList, Scissors } from "lucide-react";
+import { Users, DollarSign, Loader2, Banknote, BadgePercent, ClipboardList, Scissors } from "lucide-react";
 
 // Helpers e Serviços
 import apiClient from "@/services/api";
@@ -177,7 +177,7 @@ export function BarberPerformancePage() {
                 <DollarSign size={20} />
                 Visão Geral
               </h3>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
                   title="Receita Total Gerada"
                   value={PriceFormater(data.overview.totalRevenue)}
@@ -193,7 +193,6 @@ export function BarberPerformancePage() {
                   valueClassName="text-purple-600"
                 />
                 <MetricCard title="Total de Atendimentos" value={data.overview.totalBookings} icon={ClipboardList} />
-                <MetricCard title="Ticket Médio" value={PriceFormater(data.overview.averageTicket)} icon={UserCheck} valueClassName="text-blue-600" />
                 <MetricCard title="Clientes Únicos" value={data.overview.totalUniqueCustomers} icon={Users} description="Clientes que você atendeu" />
               </div>
             </div>

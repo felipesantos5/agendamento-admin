@@ -71,14 +71,6 @@ export function AdminLayout() {
             loyaltyProgramEnable: response.data.loyaltyProgram.enabled,
             loyaltyProgramCount: response.data.loyaltyProgram.targetCount,
           });
-
-          console.log(
-            `            loyaltyProgram: {
-              enabled: response.data.loyaltyProgram.enabled,
-              targetCount: response.data.loyaltyProgram.targetCount,
-            },`,
-            response.data.loyaltyProgram.enabled
-          );
           setError(null);
         } else {
           setError("Barbearia não encontrada.");
@@ -152,19 +144,6 @@ export function AdminLayout() {
       roles: ["admin", "barber"],
     },
     {
-      to: "funcionarios",
-      label: "Funcionários",
-      icon: <Contact className="mr-2 h-4 w-4" />,
-      roles: ["admin"],
-    },
-    {
-      to: "servicos",
-      label: "Serviços",
-      icon: <Scissors className="mr-2 h-4 w-4" />,
-      roles: ["admin"],
-    },
-
-    {
       to: "agendamentos/lista",
       label: " Histórico",
       icon: <CalendarDays className="mr-2 h-4 w-4" />,
@@ -177,6 +156,19 @@ export function AdminLayout() {
       icon: <Users2 className="mr-2 h-4 w-4" />,
       roles: ["admin", "barber"],
     },
+    {
+      to: "funcionarios",
+      label: "Funcionários",
+      icon: <Contact className="mr-2 h-4 w-4" />,
+      roles: ["admin"],
+    },
+    {
+      to: "servicos",
+      label: "Serviços",
+      icon: <Scissors className="mr-2 h-4 w-4" />,
+      roles: ["admin"],
+    },
+
     {
       to: "planos",
       label: "Planos",
