@@ -71,14 +71,6 @@ export function AdminLayout() {
             loyaltyProgramEnable: response.data.loyaltyProgram.enabled,
             loyaltyProgramCount: response.data.loyaltyProgram.targetCount,
           });
-
-          console.log(
-            `            loyaltyProgram: {
-              enabled: response.data.loyaltyProgram.enabled,
-              targetCount: response.data.loyaltyProgram.targetCount,
-            },`,
-            response.data.loyaltyProgram.enabled
-          );
           setError(null);
         } else {
           setError("Barbearia não encontrada.");
