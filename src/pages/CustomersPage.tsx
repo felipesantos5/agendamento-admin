@@ -3,17 +3,29 @@ import { useEffect, useState, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import { toast } from "sonner";
 import apiClient from "@/services/api";
-import { format } from "date-fns"; // Import format
-import { ptBR } from "date-fns/locale"; // Import ptBR locale
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-// Imports de UI e Ícones (mantidos)
+// Imports de UI e Ícones
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, MoreHorizontal, User, Filter, Search, CalendarDays, Clock, Scissors, Calendar, History } from "lucide-react";
+import {
+  Loader2,
+  MoreHorizontal,
+  User,
+  Filter,
+  Search,
+  CalendarDays,
+  Clock,
+  Scissors,
+  Calendar,
+  History,
+  Contact, // ✅ Ícone adicionado
+} from "lucide-react";
 import { PhoneFormat } from "@/helper/phoneFormater";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -58,11 +70,17 @@ interface Plan {
   durationInDays: number;
 }
 
+// ✅ NOVA INTERFACE PARA BARBEIROS
+interface Barber {
+  _id: string;
+  name: string;
+}
+
 interface Booking {
   _id: string;
-  date: string; // Should be string if API sends it as string initially
-  time: string; // This should ideally be a full ISO string from API
-  status: "confirmed" | "completed" | "cancelled" | "no-show"; // Corrected status values
+  date: string;
+  time: string;
+  status: "confirmed" | "completed" | "cancelled" | "no-show";
   service: {
     _id: string;
     name: string;
@@ -101,12 +119,14 @@ export function CustomersPage() {
   // Estados existentes...
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [allBarbers, setAllBarbers] = useState<Barber[]>([]); // ✅ NOVO ESTADO
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "with-plan" | "without-plan">("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [selectedBarberId, setSelectedBarberId] = useState<string>(""); // ✅ NOVO ESTADO
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [errorModal, setErrorModal] = useState("");
   const [isBookingsModalOpen, setIsBookingsModalOpen] = useState(false);
@@ -118,7 +138,7 @@ export function CustomersPage() {
   const [totalCustomers, setTotalCustomers] = useState(0);
   const ITEMS_PER_PAGE = 15;
 
-  // --- fetchPageData ATUALIZADA para incluir filtros ---
+  // --- fetchPageData ATUALIZADA para incluir barbeiros ---
   const fetchPageData = useCallback(
     async (page = 1) => {
       if (!barbershopId) return;
@@ -128,23 +148,23 @@ export function CustomersPage() {
           page: page.toString(),
           limit: ITEMS_PER_PAGE.toString(),
         });
-        // Adiciona search se houver termo
         if (searchTerm.trim()) {
           customerParams.append("search", searchTerm.trim());
         }
-        // Adiciona status se não for 'all'
         if (filterStatus !== "all") {
-          // **IMPORTANTE:** Verifique se 'subscriptionStatus' é o nome correto do parâmetro na sua API
           customerParams.append("subscriptionStatus", filterStatus);
         }
 
-        const [customersRes, plansRes] = await Promise.all([
+        const [customersRes, plansRes, barbersRes] = await Promise.all([
+          // ✅ Adicionado barbersRes
           apiClient.get<CustomersApiResponse>(`${API_BASE_URL}/api/barbershops/${barbershopId}/admin/customers?${customerParams.toString()}`),
           apiClient.get(`${API_BASE_URL}/api/barbershops/${barbershopId}/plans`),
+          apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/barbers`), // ✅ Busca barbeiros
         ]);
 
         setCustomers(customersRes.data.customers);
         setPlans(plansRes.data);
+        setAllBarbers(barbersRes.data); // ✅ Salva barbeiros
         setCurrentPage(customersRes.data.pagination.currentPage);
         setTotalPages(customersRes.data.pagination.totalPages);
         setTotalCustomers(customersRes.data.pagination.totalCustomers);
@@ -159,13 +179,9 @@ export function CustomersPage() {
       }
     },
     [barbershopId, searchTerm, filterStatus]
-  ); // <- Adicionado searchTerm e filterStatus como dependências
+  );
 
-  // --- useEffect para buscar dados ---
   useEffect(() => {
-    // Chama a busca com a página 1 sempre que os filtros mudarem,
-    // ou com a currentPage se apenas a página mudar.
-    // O useCallback garante que fetchPageData só muda se os filtros mudarem.
     fetchPageData(currentPage);
   }, [fetchPageData, currentPage]);
 
@@ -174,7 +190,6 @@ export function CustomersPage() {
     setIsLoadingBookings(true);
     try {
       const response = await apiClient.get(`${API_BASE_URL}/api/barbershops/${barbershopId}/admin/customers/${customerId}/bookings`);
-      // Ordena do mais recente para o mais antigo
       const sortedBookings = response.data.sort((a: Booking, b: Booking) => new Date(b.time).getTime() - new Date(a.time).getTime());
       setCustomerBookings(sortedBookings);
     } catch (error: any) {
@@ -193,34 +208,39 @@ export function CustomersPage() {
     await fetchCustomerBookings(customer._id);
   };
 
-  // Funções para modal de planos (handleOpenSubscribeModal, handleSubscribeCustomer - mantidas)
+  // ✅ ATUALIZADO: Funções para modal de planos
   const handleOpenSubscribeModal = (customer: Customer) => {
     setSelectedCustomer(customer);
     setSelectedPlanId("");
-    setErrorModal(""); // Limpa erro do modal
+    setSelectedBarberId(""); // ✅ Reseta barbeiro
+    setErrorModal("");
     setIsModalOpen(true);
   };
 
   const handleSubscribeCustomer = async () => {
-    if (!selectedCustomer || !selectedPlanId) {
-      toast.error("Por favor, selecione um plano.");
+    // ✅ Validação atualizada
+    if (!selectedCustomer || !selectedPlanId || !selectedBarberId) {
+      const errorMessage = !selectedPlanId ? "Por favor, selecione um plano." : "Por favor, selecione um barbeiro.";
+      toast.error(errorMessage);
+      setErrorModal(errorMessage);
       return;
     }
     setIsSubscribing(true);
-    setErrorModal(""); // Limpa erro do modal
+    setErrorModal("");
     try {
+      // ✅ Payload atualizado
       await apiClient.post(`${API_BASE_URL}/api/barbershops/${barbershopId}/admin/customers/${selectedCustomer._id}/subscribe`, {
         planId: selectedPlanId,
+        barberId: selectedBarberId,
       });
 
       toast.success(`${selectedCustomer.name} agora tem um novo plano!`);
       setIsModalOpen(false);
-      // Rebusca a PÁGINA ATUAL após sucesso para refletir a mudança no cliente
       fetchPageData(currentPage);
     } catch (error: any) {
       console.error("Erro ao atribuir plano:", error);
       const apiError = error.response?.data?.message || "Falha ao atribuir o plano.";
-      setErrorModal(apiError); // Mostra erro no modal
+      setErrorModal(apiError);
       toast.error(apiError);
     } finally {
       setIsSubscribing(false);
@@ -231,7 +251,6 @@ export function CustomersPage() {
   const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return "N/A";
     try {
-      // Usa UTC para evitar problemas de fuso horário ao mostrar apenas a data
       return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
     } catch {
       return "Data inválida";
@@ -243,7 +262,6 @@ export function CustomersPage() {
     try {
       const date = new Date(dateTimeString);
       if (isNaN(date.getTime())) return "Data/hora inválida";
-      // Formata para o fuso local do navegador
       return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
     } catch {
       return "Data/hora inválida";
@@ -256,7 +274,6 @@ export function CustomersPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const end = new Date(endDate);
-      // Importante: Assume que a data da API está em UTC e converte para local ANTES de zerar a hora
       const localEnd = new Date(end.toLocaleString("en-US", { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
       localEnd.setHours(0, 0, 0, 0);
 
@@ -277,7 +294,7 @@ export function CustomersPage() {
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || {
-      label: status.charAt(0).toUpperCase() + status.slice(1), // Capitaliza status desconhecido
+      label: status.charAt(0).toUpperCase() + status.slice(1),
       variant: "outline" as const,
     };
 
@@ -297,7 +314,6 @@ export function CustomersPage() {
       if (isNaN(lastBookingDate.getTime())) {
         return <Badge variant="destructive">Data inválida</Badge>;
       }
-      // Usa formatDateTime que já lida com fuso local
       const formattedDateTime = formatDateTime(lastBookingTime);
       return <Badge variant="secondary">{formattedDateTime}</Badge>;
     } catch {
@@ -305,7 +321,6 @@ export function CustomersPage() {
     }
   };
 
-  // Renderização de Loading (mantida)
   if (isLoading && customers.length === 0) {
     return (
       <div className="flex justify-center items-center p-10">
@@ -333,8 +348,7 @@ export function CustomersPage() {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    setCurrentPage(1); // <- ESSENCIAL: Resetar a página ao mudar o filtro
-                    // A busca será refeita pelo useEffect por causa da dependência em fetchPageData
+                    setCurrentPage(1);
                   }}
                   className="pl-10"
                 />
@@ -344,10 +358,8 @@ export function CustomersPage() {
               <Select
                 value={filterStatus}
                 onValueChange={(value: "all" | "with-plan" | "without-plan") => {
-                  // Tipagem explícita
                   setFilterStatus(value);
-                  setCurrentPage(1); // <- ESSENCIAL: Resetar a página ao mudar o filtro
-                  // A busca será refeita pelo useEffect
+                  setCurrentPage(1);
                 }}
               >
                 <SelectTrigger>
@@ -357,7 +369,7 @@ export function CustomersPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos os clientes</SelectItem>
                   <SelectItem value="with-plan">Com plano ativo</SelectItem>
-                  <SelectItem value="without-plan">Sem plano ativo</SelectItem> {/* Texto ajustado */}
+                  <SelectItem value="without-plan">Sem plano ativo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -367,7 +379,6 @@ export function CustomersPage() {
           <div className="rounded-md border">
             <Table>
               <TableHeader>
-                {/* ... (cabeçalho da tabela mantido) ... */}
                 <TableRow>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Telefone</TableHead>
@@ -379,26 +390,22 @@ export function CustomersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading &&
-                  customers.length > 0 && ( // Loading sutil
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center h-24 relative">
-                        <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
+                {isLoading && customers.length > 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24 relative">
+                      <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
                 {!isLoading && customers.length > 0 ? (
                   customers.map((customer) => {
                     const activeSubscription = customer.subscriptions?.find((sub) => sub.status === "active");
-                    // Ajusta cálculo para tratar null e usar UTC implicitamente se a data da API for string ISO
                     const daysRemaining = getDaysRemaining(activeSubscription?.endDate);
 
                     return (
-                      // ... (renderização da linha da tabela mantida) ...
                       <TableRow key={customer._id} className="hover:bg-muted/50">
-                        {/* Célula Cliente */}
                         <TableCell>
                           <div
                             className="flex items-center space-x-3 cursor-pointer hover:bg-muted/30 p-2 rounded-md transition-colors"
@@ -422,7 +429,6 @@ export function CustomersPage() {
                             </div>
                           </div>
                         </TableCell>
-                        {/* Célula Telefone */}
                         <TableCell>
                           <div className="flex items-center">
                             <a
@@ -436,13 +442,11 @@ export function CustomersPage() {
                             </a>
                           </div>
                         </TableCell>
-                        {/* Célula Plano Ativo */}
                         <TableCell>
                           {activeSubscription ? (
                             <div className="space-y-1">
                               <p className="font-medium text-sm">{activeSubscription.plan.name}</p>
                               <Badge
-                                // Ajuste na lógica de variant para considerar null
                                 variant={daysRemaining === null ? "outline" : daysRemaining <= 7 ? "destructive" : "default"}
                                 className="text-xs"
                               >
@@ -452,8 +456,7 @@ export function CustomersPage() {
                                     : daysRemaining === 0
                                     ? "Expira hoje"
                                     : "Expirado"
-                                  : "Data Inválida"}{" "}
-                                {/* Mensagem para data inválida */}
+                                  : "Data Inválida"}
                               </Badge>
                               <div className="text-xs text-muted-foreground">Até {formatDate(activeSubscription.endDate)}</div>
                             </div>
@@ -461,20 +464,17 @@ export function CustomersPage() {
                             <Badge variant="outline">Sem plano</Badge>
                           )}
                         </TableCell>
-                        {/* Célula Cliente Desde */}
                         <TableCell>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
                             {formatDate(customer.createdAt)}
                           </div>
                         </TableCell>
-                        {/* Célula Último Agendamento */}
                         <TableCell>{getLastBookingBadge(customer.lastBookingTime)}</TableCell>
 
                         {loyaltyProgramEnable && (
                           <TableCell className="text-center">
                             {(() => {
-                              // Encontra o progresso do cliente para ESTA barbearia
                               const customerProgressData = customer.loyaltyData?.find((data) => data.barbershop === barbershopId);
                               const progress = customerProgressData?.progress || 0;
                               const rewards = customerProgressData?.rewards || 0;
@@ -482,12 +482,10 @@ export function CustomersPage() {
 
                               return (
                                 <div className="flex flex-col items-center justify-center space-y-1">
-                                  {/* Exibe o progresso: 3 / 10 */}
                                   <span className="font-bold text-sm text-primary">
                                     {progress}
                                     <span className="text-muted-foreground text-xs"> / {target}</span>
                                   </span>
-                                  {/* Exibe quantos faltam */}
                                   <Badge variant="outline" className="gap-1 text-xs">
                                     Nº de premios {rewards}
                                   </Badge>
@@ -496,7 +494,6 @@ export function CustomersPage() {
                             })()}
                           </TableCell>
                         )}
-                        {/* Célula Ações */}
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -515,7 +512,6 @@ export function CustomersPage() {
                     );
                   })
                 ) : (
-                  // Mensagem "Nenhum cliente" (mantida)
                   <TableRow>
                     <TableCell colSpan={6} className="text-center h-24">
                       <div className="flex flex-col items-center justify-center space-y-2">
@@ -532,7 +528,6 @@ export function CustomersPage() {
               </TableBody>
             </Table>
           </div>
-          {/* Paginação (mantida) */}
           {totalPages > 1 && (
             <div className="pt-4">
               <Pagination>
@@ -543,7 +538,7 @@ export function CustomersPage() {
                       onClick={(e) => {
                         e.preventDefault();
                         if (currentPage > 1) {
-                          setCurrentPage(currentPage - 1); // Apenas atualiza a página
+                          setCurrentPage(currentPage - 1);
                         }
                       }}
                       className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
@@ -561,7 +556,7 @@ export function CustomersPage() {
                       onClick={(e) => {
                         e.preventDefault();
                         if (currentPage < totalPages) {
-                          setCurrentPage(currentPage + 1); // Apenas atualiza a página
+                          setCurrentPage(currentPage + 1);
                         }
                       }}
                       className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
@@ -575,7 +570,7 @@ export function CustomersPage() {
         </CardContent>
       </Card>
 
-      {/* --- Modais (Mantidos como antes) --- */}
+      {/* --- Modais --- */}
       {/* Modal de Histórico */}
       <Dialog open={isBookingsModalOpen} onOpenChange={setIsBookingsModalOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[80vh]">
@@ -602,7 +597,6 @@ export function CustomersPage() {
                         <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <CalendarDays className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            {/* Usa formatDateTime que trata fuso local */}
                             <span className="font-medium">{formatDateTime(booking.time)}</span>
                             {getStatusBadge(booking.status)}
                           </div>
@@ -655,9 +649,8 @@ export function CustomersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Planos */}
+      {/* ✅ ATUALIZADO: Modal de Planos */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        {/* ... (Conteúdo do modal de planos mantido) ... */}
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
@@ -665,7 +658,7 @@ export function CustomersPage() {
               {selectedCustomer?.name}
             </DialogTitle>
             <DialogDescription>
-              Selecione um dos planos cadastrados para vincular a este cliente.
+              Selecione um plano e o barbeiro responsável pela venda para vincular a este cliente.
               {selectedCustomer?.subscriptions?.some((sub) => sub.status === "active") && (
                 <span className="block mt-2 text-amber-600">⚠️ O plano atual será substituído pelo novo plano selecionado.</span>
               )}
@@ -673,6 +666,7 @@ export function CustomersPage() {
           </DialogHeader>
 
           <div className="py-4 space-y-4">
+            {/* Seletor de Plano (Existente) */}
             <div>
               <Label htmlFor="planSelect">Planos Disponíveis</Label>
               <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
@@ -698,6 +692,31 @@ export function CustomersPage() {
               </Select>
             </div>
 
+            {/* ✅ NOVO SELETOR DE BARBEIRO */}
+            <div>
+              <Label htmlFor="barberSelect">Barbeiro (Responsável)</Label>
+              <Select value={selectedBarberId} onValueChange={setSelectedBarberId}>
+                <SelectTrigger id="barberSelect" className="mt-3 w-full">
+                  <SelectValue placeholder="Selecione um barbeiro..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allBarbers.length > 0 ? (
+                    allBarbers.map((barber) => (
+                      <SelectItem key={barber._id} value={barber._id}>
+                        <div className="flex items-center gap-2">
+                          <Contact className="h-4 w-4 text-muted-foreground" />
+                          {barber.name}
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground">Nenhum barbeiro encontrado.</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Resumo do Plano (Existente) */}
             {selectedPlanId && (
               <div className="p-3 bg-muted rounded-lg">
                 {(() => {
@@ -736,7 +755,8 @@ export function CustomersPage() {
             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSubscribeCustomer} disabled={isSubscribing || !selectedPlanId}>
+            {/* ✅ Validação do botão atualizada */}
+            <Button onClick={handleSubscribeCustomer} disabled={isSubscribing || !selectedPlanId || !selectedBarberId}>
               {isSubscribing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirmar
             </Button>

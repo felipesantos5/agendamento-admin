@@ -4,4 +4,5 @@ export interface AdminOutletContext {
   paymentsEnabled: boolean;
   loyaltyProgramEnable: boolean;
   loyaltyProgramCount: number;
+  isPaymentMandatory: boolean | undefined;
 }

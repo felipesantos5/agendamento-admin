@@ -1,5 +1,5 @@
-// components/ProductManagement.tsx
-import { useState, useEffect } from "react";
+// src/pages/Products.tsx
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Search,
@@ -9,7 +9,8 @@ import {
   Edit,
   Package,
   Trash2,
-  Loader2, // Added Loader2
+  Loader2,
+  BadgePercent, // Ícone para comissão
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,15 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose, // Added DialogClose
-  DialogDescription, // Added DialogDescription
-  DialogFooter, // Added DialogFooter
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -39,23 +32,29 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ImageUploader } from "../components/ImageUploader"; // Import ImageUploader
+import { ImageUploader } from "../components/ImageUploader";
 
 import { API_BASE_URL } from "@/config/BackendUrl";
 import { useOutletContext } from "react-router-dom";
 import apiClient from "@/services/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Product } from "@/types/product";
+import { Product } from "@/types/product"; // Importa o tipo atualizado
 
 interface AdminOutletContext {
   barbershopId: string;
   barbershopName: string;
 }
 
+interface Barber {
+  _id: string;
+  name: string;
+}
+
 export const ProductManagement = () => {
   const { barbershopId } = useOutletContext<AdminOutletContext>();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [allBarbers, setAllBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: "",
@@ -70,7 +69,7 @@ export const ProductManagement = () => {
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false); // State for image upload status
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Form states
   interface ProductForm {
@@ -82,6 +81,7 @@ export const ProductManagement = () => {
     stock: { current: number; minimum: number; maximum?: number };
     status: "ativo" | "inativo" | "descontinuado";
     image: string;
+    commissionRate?: number;
   }
 
   const [productForm, setProductForm] = useState<ProductForm>({
@@ -93,8 +93,9 @@ export const ProductManagement = () => {
     stock: { current: 0, minimum: 5, maximum: 0 },
     status: "ativo",
     image: "",
+    commissionRate: undefined,
   });
-  const [productImageFile, setProductImageFile] = useState<File | null>(null); // State for the selected image file
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
 
   const [stockForm, setStockForm] = useState({
     type: "entrada",
@@ -102,12 +103,14 @@ export const ProductManagement = () => {
     reason: "",
     unitCost: 0,
     notes: "",
+    barberId: "", // Mantém como "" para o placeholder funcionar
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // API Calls
-  const fetchProducts = async () => {
+  const fetchPageData = useCallback(async () => {
+    if (!barbershopId) return;
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -116,14 +119,19 @@ export const ProductManagement = () => {
       if (filters.status !== "all") params.append("status", filters.status);
       if (filters.lowStock) params.append("lowStock", "true");
 
-      const response = await apiClient.get(`${API_BASE_URL}/api/barbershops/${barbershopId}/products?${params}`);
-      setProducts(response.data.products);
+      const productsUrl = `${API_BASE_URL}/api/barbershops/${barbershopId}/products?${params}`;
+      const barbersUrl = `${API_BASE_URL}/barbershops/${barbershopId}/barbers`;
+
+      const [productsRes, barbersRes] = await Promise.all([apiClient.get(productsUrl), apiClient.get(barbersUrl)]);
+
+      setProducts(productsRes.data.products);
+      setAllBarbers(barbersRes.data);
     } catch (error) {
-      toast.error("Erro ao carregar produtos");
+      toast.error("Erro ao carregar dados da página");
     } finally {
       setLoading(false);
     }
-  };
+  }, [barbershopId, filters]);
 
   // Validations
   const validateProduct = () => {
@@ -136,6 +144,10 @@ export const ProductManagement = () => {
     if (productForm.stock.current < 0) newErrors.currentStock = "Estoque atual deve ser positivo";
     if (productForm.stock.minimum < 0) newErrors.minimumStock = "Estoque mínimo deve ser positivo";
 
+    if (productForm.commissionRate && (productForm.commissionRate < 0 || productForm.commissionRate > 100)) {
+      newErrors.commissionRate = "Comissão deve ser entre 0 e 100";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -145,72 +157,60 @@ export const ProductManagement = () => {
 
     if (stockForm.quantity <= 0) newErrors.quantity = "Quantidade deve ser maior que zero";
     if (stockForm.unitCost < 0) newErrors.unitCost = "Custo unitário deve ser positivo";
+    if (!stockForm.reason.trim()) newErrors.reason = "Motivo é obrigatório";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // --- MODIFIED saveProduct FUNCTION ---
   const saveProduct = async () => {
     if (!validateProduct()) return;
 
     setSubmitting(true);
-    let finalImageUrl = productForm.image || ""; // Start with existing or empty URL
+    let finalImageUrl = productForm.image || "";
 
     try {
-      // Step 1: Upload Image if a new file is selected
       if (productImageFile) {
         setIsUploadingImage(true);
         const imageFormData = new FormData();
-        imageFormData.append("productImageFile", productImageFile); // Match backend field name
+        imageFormData.append("productImageFile", productImageFile);
 
         try {
-          const uploadResponse = await apiClient.post(
-            `${API_BASE_URL}/api/upload/product-image`, // Your image upload endpoint
-            imageFormData,
-            { headers: { "Content-Type": "multipart/form-data" } } // Important for file uploads
-          );
-          finalImageUrl = uploadResponse.data.imageUrl; // Get URL from backend response
-          setProductImageFile(null); // Clear file state after successful upload
+          const uploadResponse = await apiClient.post(`${API_BASE_URL}/api/upload/product-image`, imageFormData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          finalImageUrl = uploadResponse.data.imageUrl;
+          setProductImageFile(null);
         } catch (uploadError: any) {
           console.error("Erro no upload da imagem:", uploadError);
           toast.error(uploadError.response?.data?.error || "Falha ao fazer upload da imagem.");
           setIsUploadingImage(false);
           setSubmitting(false);
-          return; // Stop if image upload fails
+          return;
         } finally {
           setIsUploadingImage(false);
         }
       }
 
-      // Step 2: Prepare product data with the final image URL
       const productDataPayload = {
         ...productForm,
-        image: finalImageUrl, // Use the uploaded URL or the existing one
-        _id: selectedProduct?._id, // Add _id if editing an existing product
+        image: finalImageUrl,
+        _id: selectedProduct?._id,
+        commissionRate: productForm.commissionRate ? Number(productForm.commissionRate) : undefined,
       };
-      // Remove _id if it exists, as it shouldn't be in the payload for creation/update body
       const { _id, ...payloadWithoutId } = productDataPayload;
 
       if (selectedProduct) {
-        // Update existing product
-        await apiClient.put(
-          `${API_BASE_URL}/api/barbershops/${barbershopId}/products/${selectedProduct._id}`,
-          payloadWithoutId // Send payload without _id
-        );
+        await apiClient.put(`${API_BASE_URL}/api/barbershops/${barbershopId}/products/${selectedProduct._id}`, payloadWithoutId);
         toast.success("Produto atualizado");
       } else {
-        // Create new product
-        await apiClient.post(
-          `${API_BASE_URL}/api/barbershops/${barbershopId}/products`,
-          payloadWithoutId // Send payload without _id
-        );
+        await apiClient.post(`${API_BASE_URL}/api/barbershops/${barbershopId}/products`, payloadWithoutId);
         toast.success("Produto criado");
       }
 
       setProductModal(false);
       resetProductForm();
-      fetchProducts(); // Refresh the product list
+      fetchPageData();
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || "Erro ao salvar produto";
       toast.error(errorMessage);
@@ -218,22 +218,18 @@ export const ProductManagement = () => {
       setSubmitting(false);
     }
   };
-  // --- END OF MODIFIED saveProduct FUNCTION ---
 
   const deleteProduct = async () => {
     if (!selectedProduct) return;
 
     try {
       setSubmitting(true);
-      await apiClient.delete(
-        // Changed to use apiClient.delete directly
-        `${API_BASE_URL}/api/barbershops/${barbershopId}/products/${selectedProduct._id}`
-      );
+      await apiClient.delete(`${API_BASE_URL}/api/barbershops/${barbershopId}/products/${selectedProduct._id}`);
 
       toast.success("Produto deletado");
       setDeleteDialog(false);
       setSelectedProduct(null);
-      fetchProducts();
+      fetchPageData();
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Erro ao deletar produto");
     } finally {
@@ -246,16 +242,27 @@ export const ProductManagement = () => {
 
     try {
       setSubmitting(true);
-      // Correctly use apiClient.post for stock movement
-      await apiClient.post(
-        `${API_BASE_URL}/api/barbershops/${barbershopId}/products/${selectedProduct._id}/stock`,
-        stockForm // Send stockForm data directly in the body
-      );
+
+      const payload: any = {
+        type: stockForm.type,
+        quantity: stockForm.quantity,
+        reason: stockForm.reason,
+        unitCost: stockForm.unitCost,
+        notes: stockForm.notes,
+      };
+
+      // ✅ *** CORREÇÃO APLICADA AQUI ***
+      // Envia o barberId APENAS se ele for selecionado e não for a string "none"
+      if (stockForm.type === "venda" && stockForm.barberId && stockForm.barberId !== "none") {
+        payload.barberId = stockForm.barberId;
+      }
+
+      await apiClient.post(`${API_BASE_URL}/api/barbershops/${barbershopId}/products/${selectedProduct._id}/stock`, payload);
 
       toast.success("Estoque movimentado");
       setStockModal(false);
       resetStockForm();
-      fetchProducts();
+      fetchPageData();
     } catch (error: any) {
       const message = error.response?.data?.error || error.message || "Erro ao movimentar estoque";
       toast.error(message);
@@ -274,9 +281,10 @@ export const ProductManagement = () => {
       price: { purchase: 0, sale: 0 },
       stock: { current: 0, minimum: 5, maximum: 0 },
       status: "ativo",
-      image: "", // Reset image field
+      image: "",
+      commissionRate: undefined,
     });
-    setProductImageFile(null); // Reset image file state
+    setProductImageFile(null);
     setSelectedProduct(null);
     setErrors({});
   };
@@ -288,6 +296,7 @@ export const ProductManagement = () => {
       reason: "",
       unitCost: 0,
       notes: "",
+      barberId: "", // Reseta para "" (string vazia) para mostrar o placeholder
     });
     setSelectedProduct(null);
     setErrors({});
@@ -295,10 +304,10 @@ export const ProductManagement = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (barbershopId) fetchProducts();
+      if (barbershopId) fetchPageData();
     }, 500);
     return () => clearTimeout(timer);
-  }, [filters, barbershopId]);
+  }, [filters, barbershopId, fetchPageData]);
 
   const openProductModal = (product?: Product) => {
     if (product) {
@@ -316,6 +325,7 @@ export const ProductManagement = () => {
         },
         status: product.status,
         image: product.image || "",
+        commissionRate: product.commissionRate || undefined,
       });
       setProductImageFile(null);
     } else {
@@ -333,6 +343,7 @@ export const ProductManagement = () => {
       reason: "",
       unitCost: product.price.purchase,
       notes: "",
+      barberId: "", // Inicia com "" para o placeholder
     });
     setErrors({});
     setStockModal(true);
@@ -345,6 +356,18 @@ export const ProductManagement = () => {
     }).format(value);
 
   const lowStockCount = products.filter((p) => p.isLowStock).length;
+
+  const getCommissionDisplay = (product: Product) => {
+    if (product.commissionRate && product.commissionRate > 0) {
+      return (
+        <Badge variant="outline" className="gap-1">
+          <BadgePercent className="h-3 w-3" />
+          {product.commissionRate}%
+        </Badge>
+      );
+    }
+    return <span className="text-xs text-muted-foreground">--</span>;
+  };
 
   return (
     <div className="space-y-6">
@@ -359,7 +382,6 @@ export const ProductManagement = () => {
         </Button>
       </div>
 
-      {/* Alerta baixo estoque */}
       {lowStockCount > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <div className="flex items-center gap-2">
@@ -385,7 +407,6 @@ export const ProductManagement = () => {
 
         <Select value={filters.category} onValueChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}>
           <SelectTrigger className="w-full sm:w-48">
-            {/* Changed placeholder to SelectValue for correct display */}
             <SelectValue placeholder="Todas Categorias" />
           </SelectTrigger>
           <SelectContent>
@@ -426,23 +447,22 @@ export const ProductManagement = () => {
 
       {/* Tabela */}
       <div className="border rounded-lg overflow-x-auto">
-        {" "}
-        {/* Added overflow-x-auto */}
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Produto</TableHead>
               <TableHead className="pl-12 md:px-2">Estoque</TableHead>
               <TableHead>Preços</TableHead>
+              <TableHead>Comissão</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-12 text-right"></TableHead> {/* Added text-right */}
+              <TableHead className="w-12 text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin" /> {/* Use Loader2 */}
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                 </TableCell>
               </TableRow>
             ) : products.length === 0 ? (
@@ -470,9 +490,7 @@ export const ProductManagement = () => {
                     </div>
                   </TableCell>
                   <TableCell className="pl-12 md:px-2">
-                    <div className="space-y-1  sm:text-left">
-                      {" "}
-                      {/* Centered on small screens */}
+                    <div className="space-y-1 sm:text-left">
                       {product.isLowStock ? (
                         <Badge variant="destructive" className="gap-1">
                           <AlertTriangle className="w-3 h-3" />
@@ -486,35 +504,24 @@ export const ProductManagement = () => {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-right sm:text-left">
-                      {" "}
-                      {/* Right aligned on small screens */}
                       <div>Venda: {formatCurrency(product.price.sale)}</div>
                       <div className="text-muted-foreground">Compra: {formatCurrency(product.price.purchase)}</div>
-                      <div className="text-xs text-green-600">
-                        Margem: {product.profitMargin ? product.profitMargin.toFixed(1) + "%" : "--"} {/* Added check for profitMargin */}
-                      </div>
+                      <div className="text-xs text-green-600">Margem: {product.profitMargin ? product.profitMargin.toFixed(1) + "%" : "--"}</div>
                     </div>
                   </TableCell>
+                  <TableCell>{getCommissionDisplay(product)}</TableCell>
                   <TableCell className="text-center sm:text-left">
-                    {" "}
-                    {/* Centered on small screens */}
                     <Badge
-                      variant={
-                        product.status === "ativo" ? "default" : product.status === "inativo" ? "secondary" : "outline" // Use outline for descontinuado
-                      }
-                      className={product.status === "ativo" ? "bg-green-100 text-green-800 border-green-200" : ""} // Custom active style
+                      variant={product.status === "ativo" ? "default" : product.status === "inativo" ? "secondary" : "outline"}
+                      className={product.status === "ativo" ? "bg-green-100 text-green-800 border-green-200" : ""}
                     >
-                      {product.status.charAt(0).toUpperCase() + product.status.slice(1)} {/* Capitalize status */}
+                      {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {" "}
-                    {/* Ensure actions are right-aligned */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
-                          {" "}
-                          {/* Use icon size */}
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -532,7 +539,7 @@ export const ProductManagement = () => {
                             setSelectedProduct(product);
                             setDeleteDialog(true);
                           }}
-                          className="text-red-600 focus:bg-red-50 focus:text-red-700" // Destructive style
+                          className="text-red-600 focus:bg-red-50 focus:text-red-700"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Deletar
@@ -547,7 +554,7 @@ export const ProductManagement = () => {
         </Table>
       </div>
 
-      {/* Modal Produto */}
+      {/* Modal Produto (Atualizado) */}
       <Dialog open={productModal} onOpenChange={setProductModal}>
         <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
           <DialogHeader>
@@ -632,6 +639,26 @@ export const ProductManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {/* ✅ NOVO CAMPO DE COMISSÃO */}
+                <div className="space-y-2">
+                  <Label htmlFor="commissionRate">Comissão (%)</Label>
+                  <Input
+                    id="commissionRate"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={productForm.commissionRate || ""}
+                    onChange={(e) =>
+                      setProductForm((prev) => ({
+                        ...prev,
+                        commissionRate: e.target.value === "" ? undefined : parseFloat(e.target.value),
+                      }))
+                    }
+                    placeholder="Ex: 15"
+                  />
+                  {errors.commissionRate && <p className="text-sm text-red-500">{errors.commissionRate}</p>}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -646,7 +673,7 @@ export const ProductManagement = () => {
                     }))
                   }
                   placeholder="Descrição do produto"
-                  rows={3} // Increased rows
+                  rows={3}
                 />
               </div>
 
@@ -657,7 +684,7 @@ export const ProductManagement = () => {
                     id="purchasePrice"
                     type="number"
                     step="0.01"
-                    min="0" // Added min attribute
+                    min="0"
                     value={productForm.price.purchase}
                     onChange={(e) =>
                       setProductForm((prev) => ({
@@ -677,7 +704,7 @@ export const ProductManagement = () => {
                     id="salePrice"
                     type="number"
                     step="0.01"
-                    min="0" // Added min attribute
+                    min="0"
                     value={productForm.price.sale}
                     onChange={(e) =>
                       setProductForm((prev) => ({
@@ -699,7 +726,7 @@ export const ProductManagement = () => {
                   <Input
                     id="currentStock"
                     type="number"
-                    min="0" // Added min attribute
+                    min="0"
                     value={productForm.stock.current}
                     onChange={(e) =>
                       setProductForm((prev) => ({
@@ -718,7 +745,7 @@ export const ProductManagement = () => {
                   <Input
                     id="minimumStock"
                     type="number"
-                    min="0" // Added min attribute
+                    min="0"
                     value={productForm.stock.minimum}
                     onChange={(e) =>
                       setProductForm((prev) => ({
@@ -737,14 +764,13 @@ export const ProductManagement = () => {
                   <Input
                     id="maximumStock"
                     type="number"
-                    min="0" // Added min attribute
-                    value={productForm.stock.maximum || ""} // Handle potentially undefined value
+                    min="0"
+                    value={productForm.stock.maximum || ""}
                     onChange={(e) =>
                       setProductForm((prev) => ({
                         ...prev,
                         stock: {
                           ...prev.stock,
-                          // Use null if empty, otherwise parse int
                           maximum: e.target.value === "" ? undefined : parseInt(e.target.value) || 0,
                         },
                       }))
@@ -770,7 +796,7 @@ export const ProductManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Estoque */}
+      {/* Modal Estoque (Atualizado) */}
       <Dialog open={stockModal} onOpenChange={setStockModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -794,6 +820,12 @@ export const ProductManagement = () => {
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-sm">Estoque atual:</span>
                     <Badge variant="outline">{selectedProduct.stock.current}</Badge>
+                    {selectedProduct.commissionRate && (
+                      <Badge variant="outline" className="gap-1">
+                        <BadgePercent className="h-3 w-3" />
+                        {selectedProduct.commissionRate}%
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
@@ -811,11 +843,11 @@ export const ProductManagement = () => {
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="entrada">Entrada</SelectItem>
-                  <SelectItem value="saida">Saída</SelectItem>
-                  <SelectItem value="ajuste">Ajuste</SelectItem>
-                  <SelectItem value="perda">Perda</SelectItem>
-                  <SelectItem value="venda">Venda</SelectItem>
+                  <SelectItem value="entrada">Entrada (Compra)</SelectItem>
+                  <SelectItem value="venda">Venda (Saída)</SelectItem>
+                  <SelectItem value="perda">Perda (Saída)</SelectItem>
+                  <SelectItem value="ajuste">Ajuste Manual</SelectItem>
+                  <SelectItem value="saida">Saída (Outro)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -835,6 +867,34 @@ export const ProductManagement = () => {
               />
               {errors.quantity && <p className="text-sm text-red-500">{errors.quantity}</p>}
             </div>
+
+            {/* ✅ NOVO CAMPO CONDICIONAL PARA BARBEIRO */}
+            {stockForm.type === "venda" && selectedProduct?.commissionRate && selectedProduct.commissionRate > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="barberId">Associar Venda ao Barbeiro (Comissão)</Label>
+                <Select
+                  value={stockForm.barberId} // O valor é a string vazia ou o ID
+                  onValueChange={(value) => setStockForm((prev) => ({ ...prev, barberId: value }))}
+                >
+                  <SelectTrigger id="barberId" className="w-full">
+                    <SelectValue placeholder="Selecione um barbeiro (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* ✅ *** CORREÇÃO APLICADA AQUI ***
+                        O item "Nenhum" agora tem um valor não-vazio "none" 
+                    */}
+                    <SelectItem value="none">Nenhum / Venda no balcão</SelectItem>
+                    {allBarbers.map((barber) => (
+                      <SelectItem key={barber._id} value={barber._id}>
+                        {barber.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">A comissão de {selectedProduct.commissionRate}% será registrada para este barbeiro.</p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="reason">Motivo *</Label>
               <Input

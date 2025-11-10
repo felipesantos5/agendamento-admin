@@ -1,7 +1,5 @@
 import { useEffect, useState, FormEvent, ChangeEvent } from "react";
 import { useOutletContext } from "react-router-dom";
-
-// Importações de componentes ShadCN/UI que usaremos
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +33,7 @@ interface WorkingHour {
   end: string;
 }
 
+// ✅ ATUALIZADO (1/5): Interface de dados
 interface BarbershopData {
   _id: string;
   name: string;
@@ -50,9 +49,10 @@ interface BarbershopData {
   qrcode: string;
   mercadoPagoAccessToken?: string;
   paymentsEnabled?: boolean;
+  requireOnlinePayment?: boolean; // <-- NOVO CAMPO
 }
 
-// Estado inicial para o formulário (parcial, pois será preenchido após o fetch)
+// ✅ ATUALIZADO (2/5): Estado inicial
 const initialBarbershopState: Partial<BarbershopData> = {
   name: "",
   description: "",
@@ -73,6 +73,8 @@ const initialBarbershopState: Partial<BarbershopData> = {
   slug: "",
   qrcode: "",
   workingHours: [],
+  paymentsEnabled: false,
+  requireOnlinePayment: false, // <-- NOVO CAMPO
 };
 
 const daysOfWeek = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
@@ -91,10 +93,8 @@ export function BarbeariaConfigPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-
-  const [qrCodeUrl, setQrCodeUrl] = useState("");
-  const [qrCodeBlob, setQrCodeBlob] = useState<Blob | null>(null);
-
+  const [qrCodeBlob, setQrCodeBlob] = useState<Blob | null>(null); // Armazena o blob da imagem
+  const [qrCodeUrl, setQrCodeUrl] = useState(""); // Armazena a URL local (blob:)
   const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
@@ -109,27 +109,37 @@ export function BarbeariaConfigPage() {
       setError(null);
       setSuccessMessage(null);
       try {
+        // 1. Busca os dados da barbearia
         const response = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}`);
         setFormData(response.data);
 
+        // 2. Busca o QR Code de forma autenticada
         const qrResponse = await apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/qrcode`, {
-          responseType: "blob",
+          responseType: "blob", // Pede a imagem como dados binários
         });
 
         const blob = qrResponse.data;
-        setQrCodeBlob(blob);
+        setQrCodeBlob(blob); // Salva o blob para o download
 
+        // 3. Cria uma URL temporária (blob URL) e salva no estado
         const localUrl = URL.createObjectURL(blob);
         setQrCodeUrl(localUrl);
       } catch (err) {
-        console.error("Erro ao buscar dados da barbearia:", err);
-        setError("Falha ao carregar os dados da barbearia. Verifique o console.");
+        console.error("Erro ao buscar dados da barbearia ou QR code:", err);
+        setError("Falha ao carregar os dados da barbearia.");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchBarbershopData();
+
+    // 4. LIMPEZA: Revoga a URL temporária quando o componente é desmontado
+    return () => {
+      if (qrCodeUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(qrCodeUrl);
+      }
+    };
   }, [barbershopId]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -141,15 +151,25 @@ export function BarbeariaConfigPage() {
     setFormData((prev) => ({
       ...prev,
       paymentsEnabled: checked,
+      // Se desativar os pagamentos, desativa também a obrigatoriedade
+      requireOnlinePayment: checked ? prev.requireOnlinePayment : false,
+    }));
+  };
+
+  // ✅ NOVO HANDLER (3/5): Para o novo switch
+  const handlePaymentMandatoryChange = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      requireOnlinePayment: checked,
     }));
   };
 
   const handleContactChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-    const digitsOnly = inputValue.replace(/\D/g, ""); // Remove todos os não dígitos
+    const digitsOnly = inputValue.replace(/\D/g, "");
     setFormData((prev) => ({
       ...prev,
-      contact: digitsOnly.slice(0, 11), // Salva apenas os dígitos e limita a 11
+      contact: digitsOnly.slice(0, 11),
     }));
   };
 
@@ -159,8 +179,8 @@ export function BarbeariaConfigPage() {
     setFormData((prev) => ({
       ...prev,
       address: {
-        ...(prev?.address as Address), // Assume que address já foi inicializado
-        cep: digitsOnly.slice(0, 8), // Salva apenas os dígitos e limita a 8
+        ...(prev?.address as Address),
+        cep: digitsOnly.slice(0, 8),
       },
     }));
   };
@@ -204,9 +224,10 @@ export function BarbeariaConfigPage() {
     }));
   };
 
+  // ✅ ATUALIZADO (4/5): handleSubmit (limpa dados não editáveis)
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setIsLoading(true); // Usaremos isLoading para o processo geral de salvar
+    setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
 
@@ -216,46 +237,41 @@ export function BarbeariaConfigPage() {
       return;
     }
 
-    let finalLogoUrl = formData.logoUrl; // Começa com a URL existente ou a que foi carregada
+    let finalLogoUrl = formData.logoUrl;
 
-    // 1. Se um novo arquivo de logo foi selecionado, faça o upload primeiro
     if (logoFile) {
-      setIsUploading(true); // Indica que o upload está em progresso
+      setIsUploading(true);
       const imageUploadData = new FormData();
-      imageUploadData.append("logoFile", logoFile); // 'logoFile' deve corresponder ao esperado pelo multer no backend
+      imageUploadData.append("logoFile", logoFile);
 
       try {
-        const uploadResponse = await apiClient.post(
-          `${API_BASE_URL}/api/upload/logo`, // Rota de upload no backend
-          imageUploadData
-        );
-        finalLogoUrl = uploadResponse.data.logoUrl; // Pega a URL retornada pelo backend
-        setLogoFile(null); // Limpa o arquivo do estado após o upload
+        const uploadResponse = await apiClient.post(`${API_BASE_URL}/api/upload/logo`, imageUploadData);
+        finalLogoUrl = uploadResponse.data.logoUrl;
+        setLogoFile(null);
       } catch (uploadError: any) {
         console.error("Erro no upload da logo:", uploadError);
         setError(uploadError.response?.data?.error || "Falha ao fazer upload da nova logo. As outras alterações não foram salvas.");
         setIsUploading(false);
         setIsLoading(false);
-        return; // Interrompe o processo se o upload falhar
+        return;
       } finally {
         setIsUploading(false);
       }
     }
 
-    // 2. Agora, prepare os dados da barbearia para atualização, incluindo a finalLogoUrl
     // Remove _id e outros campos não editáveis do formData antes de enviar para o PUT
-    const { _id, createdAt, updatedAt, ...dataToUpdateClean } = formData as any;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { _id, qrcode, ...dataToUpdateClean } = formData as any;
 
     const payload = {
       ...dataToUpdateClean,
-      logoUrl: finalLogoUrl, // Usa a nova URL se um arquivo foi upado, senão a que já estava
+      logoUrl: finalLogoUrl,
     };
 
     try {
-      // 3. Envie os dados atualizados da barbearia (incluindo a nova logoUrl se houver)
       const updateResponse = await apiClient.put(`${API_BASE_URL}/barbershops/${barbershopId}`, payload);
       setSuccessMessage("Dados da barbearia atualizados com sucesso!");
-      setFormData(updateResponse.data); // Atualiza o formData com os dados retornados (incluindo a nova logoUrl)
+      setFormData(updateResponse.data);
     } catch (err: any) {
       console.error("Erro ao atualizar barbearia:", err);
       setError(err.response?.data?.error || "Falha ao atualizar dados da barbearia.");
@@ -268,19 +284,12 @@ export function BarbeariaConfigPage() {
     if (!qrCodeBlob) return; // Usa o blob que já salvamos
 
     try {
-      // Cria uma URL temporária no navegador para este blob
       const url = window.URL.createObjectURL(qrCodeBlob);
-
-      // Cria um elemento de link <a> invisível
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `qrcode-barbearia-${barbershopId}.png`); // Define o nome do arquivo
-
-      // Adiciona o link ao corpo do documento e o "clica" programaticamente
+      link.setAttribute("download", `qrcode-barbearia-${barbershopId}.png`);
       document.body.appendChild(link);
       link.click();
-
-      // Limpa e remove o link temporário
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -300,7 +309,8 @@ export function BarbeariaConfigPage() {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-6">
-          {/* Detalhes Básicos */}
+          {/* ... (Detalhes Básicos, Slug, Logo, Cor, QR Code, Endereço, Horários) ... */}
+          {/* ... (O JSX para os campos anteriores permanece o mesmo) ... */}
 
           <div className="space-y-2">
             <Label htmlFor="name">Nome</Label>
@@ -316,10 +326,10 @@ export function BarbeariaConfigPage() {
               <Input
                 id="contact"
                 name="contact"
-                type="tel" // Tipo semântico para telefone
-                value={PhoneFormat(formData.contact || "")} // Mostra o valor formatado
-                onChange={handleContactChange} // Usa o handler específico para salvar só os dígitos
-                maxLength={15} // (XX) XXXXX-XXXX são 15 caracteres
+                type="tel"
+                value={PhoneFormat(formData.contact || "")}
+                onChange={handleContactChange}
+                maxLength={15}
                 placeholder="(XX) XXXXX-XXXX"
                 required
               />
@@ -350,11 +360,7 @@ export function BarbeariaConfigPage() {
           </div>
 
           <div className="space-y-2">
-            <ColorSelector
-              label="Cor principal"
-              color={formData.themeColor || "#D10000"} // Usa a cor do formData ou um fallback
-              onChange={handleThemeColorChange}
-            />
+            <ColorSelector label="Cor principal" color={formData.themeColor || "#D10000"} onChange={handleThemeColorChange} />
             <p className="text-xs text-muted-foreground">Esta cor será usada em botões e destaques na página de agendamento da sua barbearia.</p>
           </div>
 
@@ -366,6 +372,7 @@ export function BarbeariaConfigPage() {
             {qrCodeUrl ? (
               <>
                 <div className="p-4 bg-white rounded-lg border">
+                  {/* Usa a URL local (blob:) */}
                   <img src={qrCodeUrl} alt="QR Code de Agendamento" width={200} height={200} />
                 </div>
 
@@ -379,7 +386,6 @@ export function BarbeariaConfigPage() {
             )}
           </CardContent>
 
-          {/* Endereço */}
           <fieldset className="border p-4 rounded-md">
             <legend className="text-lg font-semibold px-1">Endereço</legend>
             <div className="space-y-4 mt-2">
@@ -389,13 +395,13 @@ export function BarbeariaConfigPage() {
                   <Input
                     id="cep"
                     name="cep"
-                    type="text" // Ou "tel" se preferir o teclado numérico, mas "text" é comum para CEP com máscara
-                    value={CepFormat(formData.address?.cep || "")} // Mostra o valor formatado
-                    onChange={handleCepChange} // Usa o handler específico
-                    maxLength={9} // XXXXX-XXX são 9 caracteres
-                    minLength={9} // XXXXX-XXX são 9 caracteres
+                    type="text"
+                    value={CepFormat(formData.address?.cep || "")}
+                    onChange={handleCepChange}
+                    maxLength={9}
+                    minLength={9}
                     placeholder="00000-000"
-                    required // Se o CEP for obrigatório
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -430,17 +436,14 @@ export function BarbeariaConfigPage() {
             </div>
           </fieldset>
 
-          {/* Horários de Funcionamento */}
           <fieldset className="border p-4 rounded-md">
             <legend className="text-lg font-semibold px-1">Horários de Funcionamento</legend>
             <div className="space-y-4 mt-2">
               {(formData.workingHours || []).map((wh, index) => (
                 <div
                   key={wh._id || index}
-                  // ✅ LÓGICA DE RESPONSIVIDADE AQUI
                   className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] items-end gap-3 p-3 border rounded-lg bg-gray-50/50"
                 >
-                  {/* Seletor do Dia */}
                   <div className="md:col-span-1">
                     <Label htmlFor={`wh-day-${index}`} className="text-xs font-medium text-gray-600">
                       Dia da Semana
@@ -459,9 +462,7 @@ export function BarbeariaConfigPage() {
                     </Select>
                   </div>
 
-                  {/* Container para horários e botão de remover */}
                   <div className="flex flex-col items-end gap-2 md:flex-row">
-                    {/* Input de Início */}
                     <div className="w-full">
                       <Label htmlFor={`wh-start-${index}`} className="text-xs font-medium text-gray-600">
                         Início
@@ -474,8 +475,6 @@ export function BarbeariaConfigPage() {
                         onChange={(e) => handleWorkingHourChange(index, "start", e.target.value)}
                       />
                     </div>
-
-                    {/* Input de Fim */}
                     <div className="w-full">
                       <Label htmlFor={`wh-end-${index}`} className="text-xs font-medium text-gray-600">
                         Fim
@@ -488,8 +487,6 @@ export function BarbeariaConfigPage() {
                         onChange={(e) => handleWorkingHourChange(index, "end", e.target.value)}
                       />
                     </div>
-
-                    {/* Botão de Remover */}
                     <Button
                       type="button"
                       variant="ghost"
@@ -503,14 +500,13 @@ export function BarbeariaConfigPage() {
                   </div>
                 </div>
               ))}
-
               <Button type="button" variant="outline" size="sm" onClick={addWorkingHour} className="mt-2">
                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Horário
               </Button>
             </div>
           </fieldset>
 
-          {/* NOVA SEÇÃO: Pagamentos Online */}
+          {/* ✅ ATUALIZADO (5/5): Fieldset de Pagamentos Online */}
           <fieldset className="border p-4 rounded-md">
             <legend className="text-lg font-semibold px-1">Pagamentos Online</legend>
             <div className="space-y-4 mt-2">
@@ -518,49 +514,67 @@ export function BarbeariaConfigPage() {
               <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
                   <Label htmlFor="payments-enabled">Ativar checkout online</Label>
-                  <CardDescription>
-                    Permitir que clientes paguem pelo agendamento diretamente no site. (eles não serão obrigados a pagar)
-                  </CardDescription>
+                  <CardDescription>Permitir que clientes paguem pelo agendamento diretamente no site.</CardDescription>
                 </div>
                 <Switch id="payments-enabled" checked={formData.paymentsEnabled || false} onCheckedChange={handlePaymentEnabledChange} />
               </div>
 
-              {/* Campo para o Access Token do Mercado Pago */}
+              {/* Bloco condicional que só aparece se os pagamentos estiverem ativos */}
               {formData.paymentsEnabled && (
-                <div className="space-y-2 flex flex-col">
-                  <Label htmlFor="mercadoPagoAccessToken">Access Token do Mercado Pago</Label>
-                  <div className="relative">
-                    <Input
-                      id="mercadoPagoAccessToken"
-                      name="mercadoPagoAccessToken"
-                      type={showToken ? "text" : "password"}
-                      value={formData.mercadoPagoAccessToken || ""}
-                      onChange={handleInputChange}
-                      placeholder="Cole seu Access Token aqui"
-                      className="pr-10"
+                <div className="space-y-4 pl-4 border-l-2 border-primary/50 pt-2 pb-2">
+                  {/* --- NOVO SWITCH (OBRIGATÓRIO) --- */}
+                  <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="requireOnlinePayment" className="font-medium">
+                        Tornar pagamento OBRIGATÓRIO?
+                      </Label>
+                      <CardDescription className="text-xs">Se ativo, o cliente DEVERÁ pagar online para concluir o agendamento.</CardDescription>
+                    </div>
+                    <Switch
+                      id="requireOnlinePayment"
+                      checked={formData.requireOnlinePayment || false}
+                      onCheckedChange={handlePaymentMandatoryChange} // Usa o novo handler
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute inset-y-0 right-0 h-full px-3"
-                      onClick={() => setShowToken(!showToken)}
-                      aria-label={showToken ? "Esconder token" : "Mostrar token"}
-                    >
-                      {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
                   </div>
-                  <a
-                    className="text-xs text-gray-700 underline"
-                    href="https://www.mercadopago.com.br/settings/account/applications/create-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Clique aqui para criar sua conta
-                  </a>
-                  <a className="text-xs text-gray-700 underline" href="https://youtu.be/341Dptvsov0" target="_blank" rel="noopener noreferrer">
-                    Video de tutorial explicativo
-                  </a>
+
+                  {/* --- FIM DO NOVO SWITCH --- */}
+
+                  {/* Campo para o Access Token do Mercado Pago */}
+                  <div className="space-y-2 flex flex-col pt-4">
+                    <Label htmlFor="mercadoPagoAccessToken">Access Token do Mercado Pago</Label>
+                    <div className="relative">
+                      <Input
+                        id="mercadoPagoAccessToken"
+                        name="mercadoPagoAccessToken"
+                        type={showToken ? "text" : "password"}
+                        value={formData.mercadoPagoAccessToken || ""}
+                        onChange={handleInputChange}
+                        placeholder="Cole seu Access Token aqui"
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute inset-y-0 right-0 h-full px-3"
+                        onClick={() => setShowToken(!showToken)}
+                        aria-label={showToken ? "Esconder token" : "Mostrar token"}
+                      >
+                        {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <a
+                      className="text-xs text-gray-700 underline"
+                      href="https://www.mercadopago.com.br/settings/account/applications/create-app"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Clique aqui para criar sua conta
+                    </a>
+                    <a className="text-xs text-gray-700 underline" href="https://youtu.be/341Dptvsov0" target="_blank" rel="noopener noreferrer">
+                      Video de tutorial explicativo
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
