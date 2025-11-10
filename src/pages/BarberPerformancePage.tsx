@@ -1,3 +1,4 @@
+// src/pages/BarberPerformancePage.tsx
 import { useEffect, useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { format, startOfMonth, endOfMonth } from "date-fns";
@@ -7,7 +8,16 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, DollarSign, Loader2, Banknote, BadgePercent, ClipboardList, Scissors } from "lucide-react";
+import {
+  Users,
+  Loader2,
+  Banknote,
+  BadgePercent,
+  Scissors,
+  Package, // ✅ Ícone Adicionado
+  ShoppingCart, // ✅ Ícone Adicionado
+} from "lucide-react";
+import { Separator } from "@/components/ui/separator"; // ✅ Separador Adicionado
 
 // Helpers e Serviços
 import apiClient from "@/services/api";
@@ -24,14 +34,21 @@ interface Period {
   endDate: string;
 }
 
-// Métricas de visão geral para o barbeiro
+// ✅ ATUALIZADO (1/3): Interface de Métricas
+// Corresponde 100% ao seu novo payload
 interface OverviewMetrics {
-  totalRevenue: number;
+  totalServiceRevenue: number;
   totalBookings: number;
-  commissionRate: number;
-  totalCommission: number;
-  averageTicket: number;
+  serviceCommissionRate: number;
+  totalServiceCommission: number;
   totalUniqueCustomers: number;
+  totalProductRevenue: number;
+  totalProductCommission: number;
+  totalProductsSold: number;
+  totalPlanRevenue: number;
+  totalPlanCommission: number;
+  totalPlansSold: number;
+  totalCommission: number;
 }
 
 // Detalhamento por serviço
@@ -169,39 +186,96 @@ export function BarberPerformancePage() {
           </CardContent>
         )}
 
+        {/* ✅ ATUALIZADO (2/3): Seção de Métricas */}
         {data && !isLoading && !error && (
           <CardContent className="space-y-6">
-            {/* --- Seção Visão Geral --- */}
+            {/* Card principal com a comissão total (EM DESTAQUE) */}
+            <Card className="mb-6 bg-purple-50 border-purple-200 shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-purple-800">Sua Comissão Total no Período</CardTitle>
+                <BadgePercent className="h-5 w-5 text-purple-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-bold text-purple-700">{PriceFormater(data.overview.totalCommission)}</div>
+                <p className="text-xs text-purple-600">
+                  {PriceFormater(data.overview.totalServiceCommission)} (Serviços) + {PriceFormater(data.overview.totalPlanCommission)} (Planos) +{" "}
+                  {PriceFormater(data.overview.totalProductCommission)} (Produtos)
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* --- Seção Serviços e Planos --- */}
             <div>
               <h3 className="text-lg font-semibold mb-3 text-primary flex items-center gap-2">
-                <DollarSign size={20} />
-                Visão Geral
+                <Scissors size={20} />
+                Métricas de Atendimento e Planos
               </h3>
+              {/* Grid ATUALIZADA (sem Ticket Médio, com Planos) */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
-                  title="Receita Total Gerada"
-                  value={PriceFormater(data.overview.totalRevenue)}
-                  icon={Banknote}
+                  title="Receita de Serviços"
+                  value={PriceFormater(data.overview.totalServiceRevenue)}
+                  icon={Scissors}
                   description={`${data.overview.totalBookings} agendamentos concluídos`}
                   valueClassName="text-green-600"
                 />
                 <MetricCard
-                  title="Sua Comissão"
-                  value={PriceFormater(data.overview.totalCommission)}
+                  title="Comissão (Serviços)"
+                  value={PriceFormater(data.overview.totalServiceCommission)}
                   icon={BadgePercent}
-                  description={`Baseado em ${data.overview.commissionRate}% da receita`}
-                  valueClassName="text-purple-600"
+                  description={`Baseado em ${data.overview.serviceCommissionRate}% da receita`}
+                  valueClassName="text-gray-700"
                 />
-                <MetricCard title="Total de Atendimentos" value={data.overview.totalBookings} icon={ClipboardList} />
+                <MetricCard
+                  title="Comissão (Planos)"
+                  value={PriceFormater(data.overview.totalPlanCommission)}
+                  icon={Package} // Ícone de plano
+                  description={`${data.overview.totalPlansSold} plano(s) vendido(s)`} // Descrição
+                  valueClassName="text-violet-600" // Cor
+                />
                 <MetricCard title="Clientes Únicos" value={data.overview.totalUniqueCustomers} icon={Users} description="Clientes que você atendeu" />
               </div>
             </div>
 
-            {/* --- Detalhamento por Serviço --- */}
+            <Separator />
+
+            {/* --- Seção Produtos --- */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-primary flex items-center gap-2">
+                <ShoppingCart size={20} />
+                Métricas de Produtos
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <MetricCard
+                  title="Produtos Vendidos"
+                  value={data.overview.totalProductsSold}
+                  icon={ShoppingCart}
+                  description="Itens vendidos por você"
+                />
+                <MetricCard
+                  title="Receita de Produtos"
+                  value={PriceFormater(data.overview.totalProductRevenue)}
+                  icon={Banknote}
+                  description="Valor total dos produtos"
+                  valueClassName="text-green-600"
+                />
+                <MetricCard
+                  title="Comissão (Produtos)"
+                  value={PriceFormater(data.overview.totalProductCommission)}
+                  icon={BadgePercent}
+                  description="Comissão das vendas de produtos"
+                  valueClassName="text-gray-700"
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* ✅ ATUALIZADO (3/3): Tabela de Serviços (Título) */}
             <div>
               <h3 className="text-lg font-semibold mb-3 text-primary flex items-center gap-2">
                 <Scissors size={20} />
-                Serviços Realizados
+                Serviços Realizados (Detalhado)
               </h3>
               <div className="rounded-md border">
                 <Table>
@@ -239,8 +313,7 @@ export function BarberPerformancePage() {
   );
 }
 
-// --- Componente Auxiliar MetricCard ---
-// (Copiado de DashboardMetricsPage.tsx para reutilização)
+// --- Componente Auxiliar MetricCard (Sem mudanças) ---
 interface MetricCardProps {
   title: string;
   value: string | number;

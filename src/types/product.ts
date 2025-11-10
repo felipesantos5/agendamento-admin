@@ -20,6 +20,7 @@ export interface Product {
   profitMargin: number;
   createdAt: string;
   updatedAt: string;
+  commissionRate?: number;
 }
 
 export interface StockMovement {
