@@ -1,5 +1,5 @@
 // src/pages/CustomersPage.tsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, ChangeEvent } from "react"; // Adicionado ChangeEvent
 import { useOutletContext } from "react-router-dom";
 import { toast } from "sonner";
 import apiClient from "@/services/api";
@@ -10,7 +10,15 @@ import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter, // ✅ Adicionado
+  DialogClose, // ✅ Adicionado
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,7 +32,9 @@ import {
   Scissors,
   Calendar,
   History,
-  Contact, // ✅ Ícone adicionado
+  Contact,
+  CreditCard,
+  Plus, // ✅ Adicionado
 } from "lucide-react";
 import { PhoneFormat } from "@/helper/phoneFormater";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -36,11 +46,33 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { API_BASE_URL } from "@/config/BackendUrl";
 import { PriceFormater } from "@/helper/priceFormater";
 import { AdminOutletContext } from "@/types/AdminOutletContext";
+import { Booking } from "@/types/bookings";
+
+// --- Interfaces (com base no seu último payload) ---
 
 interface LoyaltyData {
   barbershop: string;
   progress: number;
   rewards: number;
+}
+
+interface Plan {
+  _id: string;
+  name: string;
+  description?: string;
+  price: number;
+  durationInDays: number;
+  totalCredits?: number;
+}
+
+interface Subscription {
+  _id: string;
+  status: "active" | "expired" | "cancelled";
+  startDate: string;
+  endDate: string;
+  plan: Plan;
+  creditsRemaining?: number;
+  creditsUsed?: number;
 }
 
 interface Customer {
@@ -54,50 +86,9 @@ interface Customer {
   loyaltyData?: LoyaltyData[];
 }
 
-interface Subscription {
-  _id: string;
-  status: "active" | "expired" | "cancelled";
-  startDate: string;
-  endDate: string;
-  plan: Plan;
-}
-
-interface Plan {
-  _id: string;
-  name: string;
-  description?: string;
-  price: number;
-  durationInDays: number;
-}
-
-// ✅ NOVA INTERFACE PARA BARBEIROS
 interface Barber {
   _id: string;
   name: string;
-}
-
-interface Booking {
-  _id: string;
-  date: string;
-  time: string;
-  status: "confirmed" | "completed" | "cancelled" | "no-show";
-  service: {
-    _id: string;
-    name: string;
-    price: number;
-    duration?: number;
-  };
-  barber: {
-    _id: string;
-    name: string;
-  };
-  barbershop: {
-    _id: string;
-    name: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-  notes?: string;
 }
 
 interface PaginationData {
@@ -116,19 +107,13 @@ interface CustomersApiResponse {
 export function CustomersPage() {
   const { barbershopId, loyaltyProgramEnable, loyaltyProgramCount } = useOutletContext<AdminOutletContext>();
 
-  // Estados existentes...
+  // Estados
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [allBarbers, setAllBarbers] = useState<Barber[]>([]); // ✅ NOVO ESTADO
+  const [allBarbers, setAllBarbers] = useState<Barber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "with-plan" | "without-plan">("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
-  const [selectedBarberId, setSelectedBarberId] = useState<string>(""); // ✅ NOVO ESTADO
-  const [isSubscribing, setIsSubscribing] = useState(false);
-  const [errorModal, setErrorModal] = useState("");
   const [isBookingsModalOpen, setIsBookingsModalOpen] = useState(false);
   const [customerBookings, setCustomerBookings] = useState<Booking[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
@@ -138,7 +123,24 @@ export function CustomersPage() {
   const [totalCustomers, setTotalCustomers] = useState(0);
   const ITEMS_PER_PAGE = 15;
 
-  // --- fetchPageData ATUALIZADA para incluir barbeiros ---
+  // Estados do Modal de Atribuir Plano
+  const [isAssignPlanModalOpen, setIsAssignPlanModalOpen] = useState(false);
+  const [selectedCustomerForPlan, setSelectedCustomerForPlan] = useState<Customer | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [selectedBarberId, setSelectedBarberId] = useState<string>("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [assignPlanError, setAssignPlanError] = useState("");
+
+  // ✅ NOVOS ESTADOS para o Modal de Criar Cliente
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  const [createCustomerError, setCreateCustomerError] = useState("");
+  const [newCustomerForm, setNewCustomerForm] = useState({
+    name: "",
+    phone: "",
+  });
+
+  // --- Funções de Fetch ---
   const fetchPageData = useCallback(
     async (page = 1) => {
       if (!barbershopId) return;
@@ -156,24 +158,20 @@ export function CustomersPage() {
         }
 
         const [customersRes, plansRes, barbersRes] = await Promise.all([
-          // ✅ Adicionado barbersRes
           apiClient.get<CustomersApiResponse>(`${API_BASE_URL}/api/barbershops/${barbershopId}/admin/customers?${customerParams.toString()}`),
           apiClient.get(`${API_BASE_URL}/api/barbershops/${barbershopId}/plans`),
-          apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/barbers`), // ✅ Busca barbeiros
+          apiClient.get(`${API_BASE_URL}/barbershops/${barbershopId}/barbers`),
         ]);
 
         setCustomers(customersRes.data.customers);
         setPlans(plansRes.data);
-        setAllBarbers(barbersRes.data); // ✅ Salva barbeiros
+        setAllBarbers(barbersRes.data);
         setCurrentPage(customersRes.data.pagination.currentPage);
         setTotalPages(customersRes.data.pagination.totalPages);
         setTotalCustomers(customersRes.data.pagination.totalCustomers);
       } catch (error: any) {
         console.error("Erro ao carregar dados:", error);
         toast.error(error.response?.data?.message || "Erro ao carregar dados da página.");
-        setCustomers([]);
-        setTotalPages(1);
-        setTotalCustomers(0);
       } finally {
         setIsLoading(false);
       }
@@ -185,69 +183,113 @@ export function CustomersPage() {
     fetchPageData(currentPage);
   }, [fetchPageData, currentPage]);
 
-  // Função para buscar agendamentos do cliente (mantida)
   const fetchCustomerBookings = async (customerId: string) => {
     setIsLoadingBookings(true);
     try {
       const response = await apiClient.get(`${API_BASE_URL}/api/barbershops/${barbershopId}/admin/customers/${customerId}/bookings`);
-      const sortedBookings = response.data.sort((a: Booking, b: Booking) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      setCustomerBookings(sortedBookings);
+      setCustomerBookings(response.data.sort((a: Booking, b: Booking) => new Date(b.time).getTime() - new Date(a.time).getTime()));
     } catch (error: any) {
-      console.error("Erro ao carregar agendamentos:", error);
       toast.error(error.response?.data?.message || "Erro ao carregar histórico de agendamentos.");
-      setCustomerBookings([]);
     } finally {
       setIsLoadingBookings(false);
     }
   };
 
-  // Função para abrir modal de agendamentos (mantida)
+  // --- Handlers ---
   const handleOpenBookingsModal = async (customer: Customer) => {
     setSelectedCustomerForBookings(customer);
     setIsBookingsModalOpen(true);
     await fetchCustomerBookings(customer._id);
   };
 
-  // ✅ ATUALIZADO: Funções para modal de planos
   const handleOpenSubscribeModal = (customer: Customer) => {
-    setSelectedCustomer(customer);
+    setSelectedCustomerForPlan(customer);
     setSelectedPlanId("");
-    setSelectedBarberId(""); // ✅ Reseta barbeiro
-    setErrorModal("");
-    setIsModalOpen(true);
+    setSelectedBarberId("");
+    setAssignPlanError("");
+    setIsAssignPlanModalOpen(true);
   };
 
   const handleSubscribeCustomer = async () => {
-    // ✅ Validação atualizada
-    if (!selectedCustomer || !selectedPlanId || !selectedBarberId) {
+    if (!selectedCustomerForPlan || !selectedPlanId || !selectedBarberId) {
       const errorMessage = !selectedPlanId ? "Por favor, selecione um plano." : "Por favor, selecione um barbeiro.";
       toast.error(errorMessage);
-      setErrorModal(errorMessage);
+      setAssignPlanError(errorMessage);
       return;
     }
     setIsSubscribing(true);
-    setErrorModal("");
+    setAssignPlanError("");
     try {
-      // ✅ Payload atualizado
-      await apiClient.post(`${API_BASE_URL}/api/barbershops/${barbershopId}/admin/customers/${selectedCustomer._id}/subscribe`, {
+      await apiClient.post(`${API_BASE_URL}/api/barbershops/${barbershopId}/admin/customers/${selectedCustomerForPlan._id}/subscribe`, {
         planId: selectedPlanId,
         barberId: selectedBarberId,
       });
 
-      toast.success(`${selectedCustomer.name} agora tem um novo plano!`);
-      setIsModalOpen(false);
+      toast.success(`${selectedCustomerForPlan.name} agora tem um novo plano!`);
+      setIsAssignPlanModalOpen(false);
       fetchPageData(currentPage);
     } catch (error: any) {
       console.error("Erro ao atribuir plano:", error);
       const apiError = error.response?.data?.message || "Falha ao atribuir o plano.";
-      setErrorModal(apiError);
+      setAssignPlanError(apiError);
       toast.error(apiError);
     } finally {
       setIsSubscribing(false);
     }
   };
 
-  // Funções auxiliares (mantidas)
+  // ✅ NOVAS FUNÇÕES para Criar Cliente
+  const handleOpenCreateModal = () => {
+    setNewCustomerForm({ name: "", phone: "" });
+    setCreateCustomerError("");
+    setIsCreatingCustomer(false);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleNewCustomerChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === "phone") {
+      setNewCustomerForm((prev) => ({ ...prev, phone: PhoneFormat(value) }));
+    } else {
+      setNewCustomerForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleCreateCustomer = async () => {
+    setCreateCustomerError("");
+
+    if (!newCustomerForm.name.trim()) {
+      setCreateCustomerError("O nome é obrigatório.");
+      return;
+    }
+    const phoneDigits = newCustomerForm.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      setCreateCustomerError("O telefone parece inválido.");
+      return;
+    }
+
+    setIsCreatingCustomer(true);
+    try {
+      await apiClient.post(`${API_BASE_URL}/api/barbershops/${barbershopId}/admin/customers`, {
+        name: newCustomerForm.name,
+        phone: phoneDigits, // Envia apenas os dígitos
+      });
+
+      toast.success("Cliente criado com sucesso!");
+      setIsCreateModalOpen(false);
+      fetchPageData(1); // Recarrega a lista na página 1
+      setCurrentPage(1); // Reseta o estado da página
+    } catch (error: any) {
+      const msg = error.response?.data?.message || "Erro ao criar cliente. Verifique se o telefone já existe.";
+      console.error(error);
+      setCreateCustomerError(msg);
+      toast.error(msg);
+    } finally {
+      setIsCreatingCustomer(false);
+    }
+  };
+
+  // Funções auxiliares (Formatadores)
   const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return "N/A";
     try {
@@ -260,9 +302,7 @@ export function CustomersPage() {
   const formatDateTime = (dateTimeString: string | undefined): string => {
     if (!dateTimeString) return "N/A";
     try {
-      const date = new Date(dateTimeString);
-      if (isNaN(date.getTime())) return "Data/hora inválida";
-      return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
+      return format(new Date(dateTimeString), "dd/MM/yyyy HH:mm", { locale: ptBR });
     } catch {
       return "Data/hora inválida";
     }
@@ -276,10 +316,8 @@ export function CustomersPage() {
       const end = new Date(endDate);
       const localEnd = new Date(end.toLocaleString("en-US", { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }));
       localEnd.setHours(0, 0, 0, 0);
-
       const diffTime = localEnd.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays;
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     } catch {
       return null;
     }
@@ -292,12 +330,10 @@ export function CustomersPage() {
       canceled: { label: "Cancelado", variant: "destructive" as const },
       "no-show": { label: "Não Compareceu", variant: "outline" as const },
     };
-
     const config = statusConfig[status as keyof typeof statusConfig] || {
       label: status.charAt(0).toUpperCase() + status.slice(1),
       variant: "outline" as const,
     };
-
     return (
       <Badge variant={config.variant} className="text-xs">
         {config.label}
@@ -310,12 +346,7 @@ export function CustomersPage() {
       return <Badge variant="outline">Nunca agendou</Badge>;
     }
     try {
-      const lastBookingDate = new Date(lastBookingTime);
-      if (isNaN(lastBookingDate.getTime())) {
-        return <Badge variant="destructive">Data inválida</Badge>;
-      }
-      const formattedDateTime = formatDateTime(lastBookingTime);
-      return <Badge variant="secondary">{formattedDateTime}</Badge>;
+      return <Badge variant="secondary">{formatDateTime(lastBookingTime)}</Badge>;
     } catch {
       return <Badge variant="destructive">Erro formatar</Badge>;
     }
@@ -330,16 +361,27 @@ export function CustomersPage() {
     );
   }
 
+  // --- Renderização ---
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Clientes</CardTitle>
-          <CardDescription>
-            {totalCustomers} cliente{totalCustomers !== 1 ? "s" : ""} encontrado{totalCustomers !== 1 ? "s" : ""}
-          </CardDescription>
+          {/* ✅ HEADER ATUALIZADO COM BOTÃO */}
+          <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
+            <div>
+              <CardTitle>Lista de Clientes</CardTitle>
+              <CardDescription>
+                {totalCustomers} cliente{totalCustomers !== 1 ? "s" : ""} encontrado{totalCustomers !== 1 ? "s" : ""}
+              </CardDescription>
+            </div>
+            <Button onClick={handleOpenCreateModal}>
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Cliente
+            </Button>
+          </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-2">
+          {/* Filtros */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -382,7 +424,7 @@ export function CustomersPage() {
                 <TableRow>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Telefone</TableHead>
-                  <TableHead>Plano Ativo</TableHead>
+                  <TableHead>Planos Ativos</TableHead>
                   <TableHead>Cliente Desde</TableHead>
                   <TableHead>Último Agendamento</TableHead>
                   {loyaltyProgramEnable && <TableHead className="text-center">Fidelidade</TableHead>}
@@ -392,7 +434,7 @@ export function CustomersPage() {
               <TableBody>
                 {isLoading && customers.length > 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24 relative">
+                    <TableCell colSpan={7} className="text-center h-24 relative">
                       <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                       </div>
@@ -401,11 +443,11 @@ export function CustomersPage() {
                 )}
                 {!isLoading && customers.length > 0 ? (
                   customers.map((customer) => {
-                    const activeSubscription = customer.subscriptions?.find((sub) => sub.status === "active");
-                    const daysRemaining = getDaysRemaining(activeSubscription?.endDate);
+                    const activeSubscriptions = customer.subscriptions?.filter((sub) => sub.status === "active") || [];
 
                     return (
-                      <TableRow key={customer._id} className="hover:bg-muted/50">
+                      <TableRow key={customer._id} className="hover:bg-muted/50 align-top">
+                        {/* Célula Cliente */}
                         <TableCell>
                           <div
                             className="flex items-center space-x-3 cursor-pointer hover:bg-muted/30 p-2 rounded-md transition-colors"
@@ -429,49 +471,69 @@ export function CustomersPage() {
                             </div>
                           </div>
                         </TableCell>
+
+                        {/* Célula Telefone */}
                         <TableCell>
-                          <div className="flex items-center">
-                            <a
-                              href={`https://wa.me/55${customer.phone}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {PhoneFormat(customer.phone)}
-                            </a>
-                          </div>
+                          <a
+                            href={`https://wa.me/55${customer.phone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {PhoneFormat(customer.phone)}
+                          </a>
                         </TableCell>
+
+                        {/* Célula Planos Ativos (Renderiza múltiplos) */}
                         <TableCell>
-                          {activeSubscription ? (
-                            <div className="space-y-1">
-                              <p className="font-medium text-sm">{activeSubscription.plan.name}</p>
-                              <Badge
-                                variant={daysRemaining === null ? "outline" : daysRemaining <= 7 ? "destructive" : "default"}
-                                className="text-xs"
-                              >
-                                {daysRemaining !== null
-                                  ? daysRemaining > 0
-                                    ? `${daysRemaining} dias restantes`
-                                    : daysRemaining === 0
-                                    ? "Expira hoje"
-                                    : "Expirado"
-                                  : "Data Inválida"}
-                              </Badge>
-                              <div className="text-xs text-muted-foreground">Até {formatDate(activeSubscription.endDate)}</div>
+                          {activeSubscriptions.length > 0 ? (
+                            <div className="space-y-3">
+                              {activeSubscriptions.map((subscription) => {
+                                const daysRemaining = getDaysRemaining(subscription.endDate);
+                                return (
+                                  <div key={subscription._id} className="space-y-2 p-2 rounded-md border bg-muted/50 border-primary/20">
+                                    <p className="font-medium text-sm flex items-center gap-1">
+                                      <CreditCard className="h-4 w-4 text-primary" />
+                                      {subscription.plan.name}
+                                    </p>
+                                    {(subscription.plan.totalCredits ?? 0) > 0 && (
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="secondary" className="font-mono text-sm">
+                                          {subscription.creditsUsed ?? 0} / {subscription.plan.totalCredits}
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground">créditos usados</span>
+                                      </div>
+                                    )}
+                                    <div className="text-xs text-muted-foreground">
+                                      <span>Expira em: {formatDate(subscription.endDate)}</span>
+                                      {daysRemaining !== null && (
+                                        <Badge variant={daysRemaining <= 7 ? "destructive" : "default"} className="text-xs ml-2">
+                                          {daysRemaining > 0 ? `${daysRemaining} dias restantes` : daysRemaining === 0 ? "Expira hoje" : "Expirado"}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : (
                             <Badge variant="outline">Sem plano</Badge>
                           )}
                         </TableCell>
+
+                        {/* Célula Cliente Desde */}
                         <TableCell>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
                             {formatDate(customer.createdAt)}
                           </div>
                         </TableCell>
+
+                        {/* Célula Último Agendamento */}
                         <TableCell>{getLastBookingBadge(customer.lastBookingTime)}</TableCell>
 
+                        {/* Célula Fidelidade */}
                         {loyaltyProgramEnable && (
                           <TableCell className="text-center">
                             {(() => {
@@ -479,7 +541,6 @@ export function CustomersPage() {
                               const progress = customerProgressData?.progress || 0;
                               const rewards = customerProgressData?.rewards || 0;
                               const target = loyaltyProgramCount || 10;
-
                               return (
                                 <div className="flex flex-col items-center justify-center space-y-1">
                                   <span className="font-bold text-sm text-primary">
@@ -494,6 +555,8 @@ export function CustomersPage() {
                             })()}
                           </TableCell>
                         )}
+
+                        {/* Célula Ações */}
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -503,7 +566,7 @@ export function CustomersPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => handleOpenSubscribeModal(customer)}>
-                                {activeSubscription ? "Alterar Plano" : "Atribuir Plano"}
+                                {activeSubscriptions.length > 0 ? "Adicionar Novo Plano" : "Atribuir Plano"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -513,7 +576,7 @@ export function CustomersPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24">
+                    <TableCell colSpan={7} className="text-center h-24">
                       <div className="flex flex-col items-center justify-center space-y-2">
                         <User className="h-8 w-8 text-muted-foreground" />
                         <span className="text-muted-foreground">
@@ -528,6 +591,7 @@ export function CustomersPage() {
               </TableBody>
             </Table>
           </div>
+          {/* Paginação */}
           {totalPages > 1 && (
             <div className="pt-4">
               <Pagination>
@@ -537,12 +601,9 @@ export function CustomersPage() {
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        if (currentPage > 1) {
-                          setCurrentPage(currentPage - 1);
-                        }
+                        if (currentPage > 1) setCurrentPage(currentPage - 1);
                       }}
                       className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                      aria-disabled={currentPage === 1}
                     />
                   </PaginationItem>
                   <PaginationItem>
@@ -555,12 +616,9 @@ export function CustomersPage() {
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        if (currentPage < totalPages) {
-                          setCurrentPage(currentPage + 1);
-                        }
+                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
                       }}
                       className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                      aria-disabled={currentPage === totalPages}
                     />
                   </PaginationItem>
                 </PaginationContent>
@@ -571,6 +629,57 @@ export function CustomersPage() {
       </Card>
 
       {/* --- Modais --- */}
+
+      {/* ✅ NOVO MODAL: Criar Cliente */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar Novo Cliente</DialogTitle>
+            <DialogDescription>Insira o nome e o telefone (WhatsApp) do novo cliente.</DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newName">Nome *</Label>
+              <Input
+                id="newName"
+                name="name"
+                value={newCustomerForm.name}
+                onChange={handleNewCustomerChange}
+                placeholder="Nome completo do cliente"
+                disabled={isCreatingCustomer}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPhone">Telefone (WhatsApp) *</Label>
+              <Input
+                id="newPhone"
+                name="phone"
+                type="tel"
+                value={newCustomerForm.phone}
+                onChange={handleNewCustomerChange}
+                placeholder="(XX) XXXXX-XXXX"
+                maxLength={15} // Máscara (11) 99999-9999
+                disabled={isCreatingCustomer}
+              />
+            </div>
+            {createCustomerError && <p className="text-sm text-red-500">{createCustomerError}</p>}
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={isCreatingCustomer}>
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button onClick={handleCreateCustomer} disabled={isCreatingCustomer}>
+              {isCreatingCustomer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar Cliente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal de Histórico */}
       <Dialog open={isBookingsModalOpen} onOpenChange={setIsBookingsModalOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[80vh]">
@@ -581,7 +690,6 @@ export function CustomersPage() {
             </DialogTitle>
             <DialogDescription>Visualize todos os agendamentos realizados por este cliente ({customerBookings.length} encontrados)</DialogDescription>
           </DialogHeader>
-
           <div className="mt-4">
             {isLoadingBookings ? (
               <div className="flex justify-center items-center py-8">
@@ -613,19 +721,6 @@ export function CustomersPage() {
                               <strong>Profissional:</strong> {booking.barber?.name || "N/A"}
                             </span>
                           </div>
-                          {booking.service?.duration && (
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                              <span className="text-sm">
-                                <strong>Duração:</strong> {booking.service.duration} min
-                              </span>
-                            </div>
-                          )}
-                          {booking.notes && (
-                            <div className="text-sm text-muted-foreground pt-1 italic border-l-2 border-primary pl-2">
-                              <strong>Obs:</strong> {booking.notes}
-                            </div>
-                          )}
                         </div>
                         {booking.createdAt && (
                           <div className="text-xs text-muted-foreground text-right flex-shrink-0">
@@ -649,24 +744,17 @@ export function CustomersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ ATUALIZADO: Modal de Planos */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      {/* Modal de Planos */}
+      <Dialog open={isAssignPlanModalOpen} onOpenChange={setIsAssignPlanModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {selectedCustomer?.subscriptions?.some((sub) => sub.status === "active") ? "Alterar Plano" : "Atribuir Plano"} para{" "}
-              {selectedCustomer?.name}
-            </DialogTitle>
+            <DialogTitle>Adicionar Plano para {selectedCustomerForPlan?.name}</DialogTitle>
             <DialogDescription>
-              Selecione um plano e o barbeiro responsável pela venda para vincular a este cliente.
-              {selectedCustomer?.subscriptions?.some((sub) => sub.status === "active") && (
-                <span className="block mt-2 text-amber-600">⚠️ O plano atual será substituído pelo novo plano selecionado.</span>
-              )}
+              Selecione um plano e o barbeiro responsável pela venda. O novo plano será adicionado aos planos ativos do cliente.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            {/* Seletor de Plano (Existente) */}
             <div>
               <Label htmlFor="planSelect">Planos Disponíveis</Label>
               <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
@@ -692,7 +780,6 @@ export function CustomersPage() {
               </Select>
             </div>
 
-            {/* ✅ NOVO SELETOR DE BARBEIRO */}
             <div>
               <Label htmlFor="barberSelect">Barbeiro (Responsável)</Label>
               <Select value={selectedBarberId} onValueChange={setSelectedBarberId}>
@@ -716,13 +803,11 @@ export function CustomersPage() {
               </Select>
             </div>
 
-            {/* Resumo do Plano (Existente) */}
             {selectedPlanId && (
               <div className="p-3 bg-muted rounded-lg">
                 {(() => {
                   const selectedPlan = plans.find((p) => p._id === selectedPlanId);
                   if (!selectedPlan) return null;
-
                   return (
                     <div className="space-y-2">
                       <h4 className="font-medium">Resumo do Plano:</h4>
@@ -736,6 +821,12 @@ export function CustomersPage() {
                         <div>
                           ⏰ <strong>Duração:</strong> {selectedPlan.durationInDays} dias
                         </div>
+                        {(selectedPlan.totalCredits ?? 0) > 0 && (
+                          <div>
+                            <CreditCard className="h-4 w-4 mr-1 inline-block" />
+                            <strong>Créditos:</strong> {selectedPlan.totalCredits} usos
+                          </div>
+                        )}
                         {selectedPlan.description && (
                           <div>
                             📝 <strong>Descrição:</strong> {selectedPlan.description}
@@ -749,18 +840,19 @@ export function CustomersPage() {
             )}
           </div>
 
-          {errorModal && <p className="text-red-500 text-sm">{errorModal}</p>}
+          {assignPlanError && <p className="text-red-500 text-sm">{assignPlanError}</p>}
 
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            {/* ✅ Validação do botão atualizada */}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" onClick={() => setIsAssignPlanModalOpen(false)}>
+                Cancelar
+              </Button>
+            </DialogClose>
             <Button onClick={handleSubscribeCustomer} disabled={isSubscribing || !selectedPlanId || !selectedBarberId}>
               {isSubscribing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirmar
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

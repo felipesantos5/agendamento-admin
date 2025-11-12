@@ -16,6 +16,7 @@ export interface Booking {
     duration: number;
   };
   paymentStatus?: string;
+  createdAt?: string;
   time: string;
   status: "booked" | "confirmed" | "completed" | "canceled";
 }
