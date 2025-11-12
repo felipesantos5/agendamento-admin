@@ -28,7 +28,6 @@ import {
   Filter,
   Search,
   CalendarDays,
-  Clock,
   Scissors,
   Calendar,
   History,
