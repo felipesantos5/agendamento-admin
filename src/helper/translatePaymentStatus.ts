@@ -37,6 +37,8 @@ export function translatePaymentStatus(status?: string | null): PaymentStatusInf
     // Status de Falha ou Cancelamento
     rejected: { text: "Rejeitado", color: "danger" },
     cancelled: { text: "Cancelado", color: "danger" },
+    canceled: { text: "Cancelado", color: "danger" },
+    "n/a": { text: "Cancelado", color: "danger" },
 
     // Status Pós-pagamento
     refunded: { text: "Devolvido", color: "info" },
