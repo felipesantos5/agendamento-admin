@@ -125,6 +125,8 @@ export function AgendaView({ events, onSelectEvent, onSelectSlot, currentDate, o
         onNavigate={onNavigate}
         selectable
         onSelectSlot={onSelectSlot}
+        step={5}
+        timeslots={3}
         components={{
           event: CustomEvent,
         }}
